@@ -44,6 +44,7 @@ C4Container
 | **Tech stack** | FastAPI + Uvicorn + Pydantic |
 | **Puerto** | `localhost:8000` |
 | **Endpoints** | `/api/transcribe`, `/api/jobs`, `/api/models`, `/api/health` |
+| **Arquitectura** | Clean Architecture: `domain/` → `application/` → `infrastructure/` |
 | **Responsabilidades** | Validación de archivos, cola de trabajos (asyncio.Queue), orquestación del pipeline de 3 etapas, gestión de modelos |
 
 ### File System

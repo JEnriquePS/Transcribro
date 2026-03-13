@@ -6,16 +6,16 @@ Cómo agregar un formato de exportación (por ejemplo, `.csv`) al pipeline de tr
 
 | Archivo | Cambio |
 |---------|--------|
-| `backend/services/formatter.py` | Función que genera el nuevo formato |
-| `backend/routers/transcribe.py` | Agregar formato al endpoint de descarga |
-| `frontend/src/components/TranscriptViewer.tsx` | Tab de preview |
-| `frontend/src/components/DownloadButtons.tsx` | Botón de descarga |
+| `backend/infrastructure/services/formatter.py` | Función que genera el nuevo formato |
+| `backend/infrastructure/http/routes/jobs.py` | Agregar formato al endpoint de descarga |
+| `frontend/src/ui/components/TranscriptViewer.tsx` | Tab de preview |
+| `frontend/src/ui/components/DownloadButtons.tsx` | Botón de descarga |
 
 ## Pasos
 
 ### 1. Backend — generar el archivo
 
-En `backend/services/formatter.py`, crear una función que reciba los segmentos y retorne el contenido formateado como string:
+En `backend/infrastructure/services/formatter.py`, crear una función que reciba los segmentos y retorne el contenido formateado como string:
 
 ```python
 def format_csv(segments: list[dict]) -> str:
@@ -28,7 +28,7 @@ def format_csv(segments: list[dict]) -> str:
 
 ### 2. Backend — llamar al formateador en el pipeline
 
-En `backend/services/job_manager.py`, dentro del stage de formatting, guardar el nuevo archivo junto a los demás:
+En `backend/application/job_manager.py`, dentro del stage de formatting, guardar el nuevo archivo junto a los demás:
 
 ```python
 csv_content = format_csv(result["segments"])
@@ -37,7 +37,7 @@ csv_content = format_csv(result["segments"])
 
 ### 3. Backend — servir el archivo en el endpoint de descarga
 
-En `backend/routers/transcribe.py`, agregar el media type en el diccionario de formatos del endpoint `GET /api/jobs/{job_id}/download`:
+En `backend/infrastructure/http/routes/jobs.py`, agregar el media type en el diccionario de formatos del endpoint `GET /api/jobs/{job_id}/download`:
 
 ```python
 media_types = {
@@ -51,11 +51,11 @@ media_types = {
 
 ### 4. Frontend — agregar tab de preview
 
-En `frontend/src/components/TranscriptViewer.tsx`, agregar `"csv"` al array de tabs disponibles.
+En `frontend/src/ui/components/TranscriptViewer.tsx`, agregar `"csv"` al array de tabs disponibles.
 
 ### 5. Frontend — agregar botón de descarga
 
-En `frontend/src/components/DownloadButtons.tsx`, agregar `"csv"` al array de formatos.
+En `frontend/src/ui/components/DownloadButtons.tsx`, agregar `"csv"` al array de formatos.
 
 ## Verificación
 

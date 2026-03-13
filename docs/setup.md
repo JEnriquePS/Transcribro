@@ -128,19 +128,27 @@ npm run dev
 
 ```
 transcribro/
-├── backend/           # FastAPI + whisper.cpp integration
-│   ├── main.py        # Entry point
-│   ├── config.py      # Settings (env vars)
-│   ├── routers/       # API endpoints
-│   ├── services/      # Business logic
-│   └── models/        # Pydantic schemas
-├── frontend/          # React + Vite + Tailwind
-│   └── src/
+├── backend/                    # FastAPI + whisper.cpp (Clean Architecture)
+│   ├── main.py                 # Entry point
+│   ├── config.py               # Settings (env vars)
+│   ├── domain/                 # Entidades y enums
+│   │   └── entities.py
+│   ├── application/            # Use cases y orquestadores
+│   │   └── job_manager.py
+│   ├── infrastructure/
+│   │   ├── http/routes/        # Endpoints HTTP
+│   │   └── services/           # FFmpeg, whisper.cpp, formatter
+│   └── tests/
+├── frontend/src/               # React + Vite + Tailwind (Clean Architecture)
+│   ├── domain/                 # Types
+│   ├── application/hooks/      # Custom hooks
+│   ├── infrastructure/api/     # Cliente HTTP
+│   └── ui/                     # Components y pages
 ├── data/
-│   ├── models/        # Whisper GGML models (.bin)
-│   └── jobs/          # Transcription job outputs
+│   ├── models/                 # Whisper GGML models (.bin)
+│   └── jobs/                   # Transcription job outputs
 ├── scripts/
-│   ├── setup.sh       # Instalación automática
-│   └── dev.sh         # Levantar backend + frontend
-└── whisper.cpp/       # Compilado desde source (ignorado en git)
+│   ├── setup.sh                # Instalación automática
+│   └── dev.sh                  # Levantar backend + frontend
+└── whisper.cpp/                # Compilado desde source (ignorado en git)
 ```

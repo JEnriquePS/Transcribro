@@ -122,8 +122,8 @@
 
 | ID      | Requisito                                                                |
 |---------|--------------------------------------------------------------------------|
-| RNF-19  | Backend estructurado en capas: routers, services, models                  |
-| RNF-20  | Frontend organizado por feature: pages, components, hooks, api            |
+| RNF-19  | Backend estructurado con Clean Architecture: domain, application, infrastructure |
+| RNF-20  | Frontend organizado con Clean Architecture: domain, application, infrastructure, ui |
 | RNF-21  | Modelos de datos inmutables (Pydantic `frozen=True`, TypeScript `readonly`) |
 | RNF-22  | Configuración centralizada via `pydantic-settings` con soporte `.env`     |
 
