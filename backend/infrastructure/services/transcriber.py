@@ -4,7 +4,7 @@ import re
 from collections.abc import Awaitable, Callable
 from pathlib import Path
 
-from models.schemas import TranscriptResult, TranscriptSegment
+from domain.entities import TranscriptResult, TranscriptSegment
 
 ProgressCallback = Callable[[float], Awaitable[None]]
 SegmentCallback = Callable[[float, float, str], Awaitable[None]]

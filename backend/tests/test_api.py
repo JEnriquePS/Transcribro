@@ -56,11 +56,11 @@ class TestUploadValidation:
         file_content = b"fake mp4 content"
 
         with (
-            patch("routers.transcribe.job_manager.create_job") as mock_create,
-            patch("routers.transcribe.job_manager.save_uploaded_file", new_callable=AsyncMock),
-            patch("routers.transcribe.job_manager.enqueue_job", new_callable=AsyncMock),
+            patch("infrastructure.http.routes.transcription.job_manager.create_job") as mock_create,
+            patch("infrastructure.http.routes.transcription.job_manager.save_uploaded_file", new_callable=AsyncMock),
+            patch("infrastructure.http.routes.transcription.job_manager.enqueue_job", new_callable=AsyncMock),
         ):
-            from models.schemas import JobMetadata
+            from domain.entities import JobMetadata
 
             mock_create.return_value = JobMetadata(
                 job_id="test123", original_filename="test.mp4"

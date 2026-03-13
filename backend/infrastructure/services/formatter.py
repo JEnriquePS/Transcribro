@@ -1,6 +1,6 @@
 import json
 
-from models.schemas import TranscriptResult
+from domain.entities import TranscriptResult
 
 
 def format_timestamp_display(seconds: float) -> str:

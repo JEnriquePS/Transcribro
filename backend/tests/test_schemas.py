@@ -1,7 +1,7 @@
 import pytest
 from pydantic import ValidationError
 
-from models.schemas import (
+from domain.entities import (
     JobMetadata,
     JobStatus,
     TranscriptionConfig,

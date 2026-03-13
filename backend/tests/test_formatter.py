@@ -1,7 +1,7 @@
 import json
 
-from models.schemas import TranscriptResult, TranscriptSegment
-from services.formatter import format_enriched_json, format_timestamp_display
+from domain.entities import TranscriptResult, TranscriptSegment
+from infrastructure.services.formatter import format_enriched_json, format_timestamp_display
 
 
 class TestFormatTimestampDisplay:

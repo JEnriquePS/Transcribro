@@ -1,7 +1,7 @@
 
 import pytest
 
-from services.transcriber import get_model_path, parse_whisper_json
+from infrastructure.services.transcriber import get_model_path, parse_whisper_json
 
 
 class TestGetModelPath:

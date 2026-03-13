@@ -10,15 +10,15 @@ from fastapi import UploadFile
 
 from config import settings
 from logger import get_logger
-from models.schemas import (
+from domain.entities import (
     JobMetadata,
     JobStatus,
     TranscriptionConfig,
     TranscriptResult,
 )
-from services.audio_extractor import extract_audio, get_media_duration
-from services.formatter import format_enriched_json
-from services.transcriber import transcribe_audio
+from infrastructure.services.audio_extractor import extract_audio, get_media_duration
+from infrastructure.services.formatter import format_enriched_json
+from infrastructure.services.transcriber import transcribe_audio
 
 log = get_logger("job_manager")
 

@@ -6,8 +6,10 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
 from logger import get_logger, setup_logging
-from routers.transcribe import router as transcribe_router
-from services.job_manager import job_manager
+from application.job_manager import job_manager
+from infrastructure.http.routes.jobs import router as jobs_router
+from infrastructure.http.routes.models import router as models_router
+from infrastructure.http.routes.transcription import router as transcription_router
 from startup import validate_environment
 
 setup_logging()
@@ -42,7 +44,9 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(transcribe_router)
+app.include_router(transcription_router)
+app.include_router(jobs_router)
+app.include_router(models_router)
 
 
 @app.get("/api/health")
