@@ -1,0 +1,25 @@
+#!/bin/bash
+# Pre-commit hook: lint and type-check staged files
+set -e
+
+echo "🔍 Running pre-commit checks..."
+
+# Backend: Ruff
+if git diff --cached --name-only | grep -q "^backend/"; then
+    echo "  Backend: ruff check"
+    cd backend
+    source .venv/bin/activate 2>/dev/null || true
+    ruff check . --exclude .venv
+    cd ..
+fi
+
+# Frontend: ESLint + TypeScript
+if git diff --cached --name-only | grep -q "^frontend/"; then
+    echo "  Frontend: eslint + tsc"
+    cd frontend
+    npx eslint . --max-warnings 0
+    npx tsc --noEmit
+    cd ..
+fi
+
+echo "✅ Pre-commit checks passed"
