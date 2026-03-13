@@ -6,8 +6,8 @@ import {
   TranscriptionConfig,
   type TranscriptionConfigValues,
 } from "../components/TranscriptionConfig";
-import { getModels, transcribeBatch, transcribeSingle } from "../api/client";
-import type { ModelInfo } from "../types";
+import { getModels, transcribeBatch, transcribeSingle } from "../../infrastructure/api/client";
+import type { ModelInfo } from "../../domain/types";
 
 export function UploadPage() {
   const navigate = useNavigate();

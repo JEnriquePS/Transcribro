@@ -1,5 +1,5 @@
 import { AlertTriangle, Languages, Cpu, FileOutput } from "lucide-react";
-import type { ModelInfo } from "../types";
+import type { ModelInfo } from "../../domain/types";
 
 export type OutputFormat = "txt" | "json" | "srt" | "vtt";
 

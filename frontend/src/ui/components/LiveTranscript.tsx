@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 import { Copy, Check } from "lucide-react";
-import { getPartialTranscript, type PartialTranscript } from "../api/client";
+import { getPartialTranscript, type PartialTranscript } from "../../infrastructure/api/client";
 
 const POLL_INTERVAL = 2000;
 

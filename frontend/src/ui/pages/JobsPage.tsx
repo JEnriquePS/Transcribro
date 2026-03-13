@@ -1,8 +1,8 @@
 import { useNavigate } from "react-router-dom";
 import { Inbox, Loader2, ListVideo } from "lucide-react";
 import { JobCard } from "../components/JobCard";
-import { useJobsPolling } from "../hooks/useJobPolling";
-import { deleteJob } from "../api/client";
+import { useJobsPolling } from "../../application/hooks/useJobPolling";
+import { deleteJob } from "../../infrastructure/api/client";
 import { useState } from "react";
 
 export function JobsPage() {

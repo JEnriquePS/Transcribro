@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import axios from "axios";
 import { transcribeSingle, getJobs, deleteJob } from "./client";
-import type { TranscriptionConfig } from "../types";
+import type { TranscriptionConfig } from "../../domain/types";
 
 vi.mock("axios", () => {
   const mockInstance = {

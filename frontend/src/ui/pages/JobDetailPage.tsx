@@ -9,12 +9,12 @@ import {
   Cpu,
   Languages,
 } from "lucide-react";
-import { useJobPolling } from "../hooks/useJobPolling";
+import { useJobPolling } from "../../application/hooks/useJobPolling";
 import { ProgressBar } from "../components/ProgressBar";
 import { TranscriptViewer } from "../components/TranscriptViewer";
 import { LiveTranscript } from "../components/LiveTranscript";
-import { retryJob } from "../api/client";
-import { JobStatus } from "../types";
+import { retryJob } from "../../infrastructure/api/client";
+import { JobStatus } from "../../domain/types";
 import { useState } from "react";
 
 function formatOffsetLabel(ms: number): string {

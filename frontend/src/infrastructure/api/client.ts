@@ -5,7 +5,7 @@ import type {
   ModelInfo,
   TranscriptionConfig,
   TranscriptResult,
-} from "../types";
+} from "../../domain/types";
 
 const api = axios.create({
   baseURL: "/api",

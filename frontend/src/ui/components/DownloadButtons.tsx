@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Download, Loader2 } from "lucide-react";
-import { downloadFile } from "../api/client";
+import { downloadFile } from "../../infrastructure/api/client";
 
 interface DownloadButtonsProps {
   readonly jobId: string;

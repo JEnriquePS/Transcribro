@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { List, Copy, Check, Download, Loader2, FileText, Braces, Captions, Globe } from "lucide-react";
-import { downloadFile, previewFile } from "../api/client";
-import type { TranscriptResult } from "../types";
+import { downloadFile, previewFile } from "../../infrastructure/api/client";
+import type { TranscriptResult } from "../../domain/types";
 
 type Tab = "segments" | "txt" | "json" | "srt" | "vtt";
 

@@ -17,8 +17,8 @@ import {
   deleteModel,
   setDefaultModel as apiSetDefaultModel,
   type ModelDownloadStatus,
-} from "../api/client";
-import type { ModelInfo } from "../types";
+} from "../../infrastructure/api/client";
+import type { ModelInfo } from "../../domain/types";
 
 interface ModelState {
   readonly info: ModelInfo;

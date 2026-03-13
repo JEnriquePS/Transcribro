@@ -7,7 +7,7 @@ import {
   type TranscriptResult,
   type ModelInfo,
   type JobDetail,
-} from "./index";
+} from "./types";
 
 describe("Type definitions", () => {
   it("exports JobStatus enum with expected values", () => {

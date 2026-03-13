@@ -1,5 +1,5 @@
 import { Check } from "lucide-react";
-import { JobStatus, type JobMetadata } from "../types";
+import { JobStatus, type JobMetadata } from "../../domain/types";
 
 interface StageConfig {
   readonly key: "extraction_progress" | "transcription_progress" | "formatting_progress";

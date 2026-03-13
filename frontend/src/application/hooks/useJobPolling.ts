@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getJob, getJobs } from "../api/client";
-import { JobStatus, type JobMetadata, type TranscriptResult } from "../types";
+import { getJob, getJobs } from "../../infrastructure/api/client";
+import { JobStatus, type JobMetadata, type TranscriptResult } from "../../domain/types";
 
 function isTerminal(status: JobStatus): boolean {
   return status === JobStatus.COMPLETED || status === JobStatus.FAILED;

@@ -1,5 +1,5 @@
 import { FileVideo, AlertCircle, Trash2, Loader2 } from "lucide-react";
-import { JobStatus, type JobMetadata } from "../types";
+import { JobStatus, type JobMetadata } from "../../domain/types";
 import { ProgressBar } from "./ProgressBar";
 
 const STATUS_BADGE: Record<JobStatus, { label: string; className: string }> = {
