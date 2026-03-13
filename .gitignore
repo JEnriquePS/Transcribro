@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Caches
+.mypy_cache/
+.pytest_cache/
+
+# Data (keep folders, ignore contents)
+data/models/*
+!data/models/.gitkeep
+data/jobs/*
+!data/jobs/.gitkeep
+
+# Logs
+*.log
+
+# whisper.cpp (compiled from source)
+whisper.cpp/
+
+# Environment
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Build
+dist/
+build/
+*.egg-info/
