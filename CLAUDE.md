@@ -20,25 +20,37 @@ Dependencias apuntan hacia adentro: Infrastructure → Application → Domain.
 
 ```
 backend/                        # FastAPI API (Clean Architecture)
-  main.py                       # Entry point, lifespan, health check
+  main.py                       # Entry point, lifespan
   config.py                     # Settings desde .env
   logger.py                     # Logging setup
   startup.py                    # Validación de dependencias
-  domain/                       # Entidades, enums (capa interna)
+  domain/                       # Capa interna (cero dependencias externas)
     entities.py                 # JobMetadata, TranscriptResult, etc.
+    interfaces.py               # Protocols: AudioExtractor, Transcriber, Formatter, JobRepository
+    errors.py                   # DomainError, JobNotFoundError, etc.
+    validation.py               # Validación de job_id (path traversal prevention)
   application/                  # Use cases, orquestadores
-    job_manager.py              # CRUD de jobs, cola, pipeline
+    job_manager.py              # Facade: cola asyncio + delegación a use cases
+    use_cases/
+      create_job.py             # Crear job + guardar archivo
+      process_job.py            # Pipeline: extract → transcribe → format
+      retry_job.py              # Retry/resume de jobs fallidos
   infrastructure/               # Mundo exterior
-    http/routes/                # Endpoints HTTP
-      transcription.py          # POST /api/transcribe
-      jobs.py                   # CRUD /api/jobs
-      models.py                 # /api/models
+    http/
+      dependencies.py           # Composition root (wiring DI)
+      routes/
+        transcription.py        # POST /api/transcribe
+        jobs.py                 # CRUD /api/jobs
+        models.py               # /api/models
+    persistence/
+      job_repository.py         # FileSystemJobRepository
     services/                   # Wrappers a herramientas externas
-      audio_extractor.py        # FFmpeg
-      transcriber.py            # whisper.cpp
-      formatter.py              # Formateo de output
+      audio_extractor.py        # FFmpegAudioExtractor
+      transcriber.py            # WhisperTranscriber
+      formatter.py              # WhisperFormatter
   tests/                        # pytest + httpx
 frontend/src/                   # React SPA (Clean Architecture)
+  index.css                     # Design tokens (@theme) + light/dark mode
   domain/                       # Types, validaciones
     types.ts
   application/                  # Hooks, services
@@ -47,7 +59,11 @@ frontend/src/                   # React SPA (Clean Architecture)
     api/client.ts
   ui/                           # Presentación
     components/                 # Componentes reutilizables
+      ThemeToggle.tsx            # Toggle dark/light mode
+      ConfirmDialog.tsx          # Modal de confirmación destructiva
+      ErrorBoundary.tsx          # Error boundary con fallback UI
     pages/                      # Páginas
+      NotFoundPage.tsx           # 404
     App.tsx
 docs/                           # Documentación (setup, requisitos, C4, ADRs)
 scripts/                        # setup.sh, dev.sh
@@ -66,7 +82,7 @@ cd backend && source .venv/bin/activate
 uvicorn main:app --reload --port 8000
 ruff check . --exclude .venv     # Lint
 ruff format .                    # Format
-python -m pytest tests/ -v       # Tests (26)
+python -m pytest tests/ -v       # Tests (27)
 
 # Frontend
 cd frontend
@@ -80,9 +96,13 @@ npx tsc --noEmit                 # Type check
 ## Convenciones
 
 - **Inmutabilidad**: Pydantic models usan `frozen=True`, nunca mutar objetos
+- **Dependency Injection**: use cases reciben Protocols por constructor, se componen en `dependencies.py` — ver [ADR-006](docs/decisions/006-domain-interfaces-di.md)
+- **Design tokens**: colores semánticos en `index.css` via `@theme`, dark/light mode — ver [ADR-005](docs/decisions/005-design-tokens-theming.md)
 - **Formatos soportados**: .mp4, .mkv, .avi, .mov, .webm, .mp3, .wav, .flac, .ogg, .m4a
 - **Job pipeline**: PENDING → EXTRACTING → TRANSCRIBING → FORMATTING → COMPLETED/FAILED
 - **Polling HTTP**: el frontend usa polling (no WebSockets) para actualizaciones
 - **Cola secuencial**: los jobs se procesan uno a la vez via asyncio.Queue
 - **API prefix**: todos los endpoints bajo `/api/`
 - **Env config**: backend usa `.env` (nunca commitear)
+- **Validación de inputs**: job_id validado con regex `^[a-f0-9]{32}$`, file size enforced contra `max_file_size`
+- **Errores sanitizados**: logs internos detallan, API responde mensajes genéricos (nunca paths del sistema)
