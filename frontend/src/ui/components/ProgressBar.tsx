@@ -52,25 +52,25 @@ export function ProgressBar({ metadata }: ProgressBarProps) {
         const isPending = i > currentIndex && !isCompleted;
         const isFailedStage = isFailed && isActive;
 
-        let barColor = "bg-gray-800";
-        let labelColor = "text-gray-600";
-        let pctText = "—";
+        let barColor = "bg-surface-elevated";
+        let labelColor = "text-text-muted";
+        let pctText = "\u2014";
 
         if (isCompleted || isDone) {
-          barColor = "bg-cyan-500/60";
-          labelColor = "text-gray-400";
+          barColor = "bg-accent";
+          labelColor = "text-text-secondary";
           pctText = "";
         } else if (isFailedStage) {
-          barColor = "bg-red-500";
-          labelColor = "text-red-400";
+          barColor = "bg-error";
+          labelColor = "text-error";
           pctText = `${pct}%`;
         } else if (isActive) {
-          barColor = "bg-cyan-400";
-          labelColor = "text-cyan-300";
+          barColor = "bg-accent";
+          labelColor = "text-accent-text";
           pctText = `${pct}%`;
         } else if (isPending) {
-          labelColor = "text-gray-600";
-          pctText = "—";
+          labelColor = "text-text-muted";
+          pctText = "\u2014";
         }
 
         return (
@@ -78,7 +78,14 @@ export function ProgressBar({ metadata }: ProgressBarProps) {
             <span className={`text-xs w-28 shrink-0 ${labelColor}`}>
               {stage.label}
             </span>
-            <div className="flex-1 bg-gray-800 rounded-full h-2">
+            <div
+              className="flex-1 bg-surface-elevated rounded-full h-2"
+              role="progressbar"
+              aria-valuenow={pct}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={stage.label}
+            >
               <div
                 className={`h-2 rounded-full transition-all duration-500 ${barColor}`}
                 style={{ width: `${pct}%` }}
@@ -86,7 +93,7 @@ export function ProgressBar({ metadata }: ProgressBarProps) {
             </div>
             <span className="w-10 text-right shrink-0">
               {isDone || isCompleted ? (
-                <Check size={14} className="inline text-cyan-400" />
+                <Check size={14} className="inline text-accent-text" />
               ) : (
                 <span className={`text-xs font-mono ${labelColor}`}>{pctText}</span>
               )}
@@ -96,17 +103,17 @@ export function ProgressBar({ metadata }: ProgressBarProps) {
       })}
 
       {/* Overall + duration */}
-      <div className="flex items-center justify-between pt-1 border-t border-gray-800/50">
-        <span className="text-xs font-mono text-gray-500">
+      <div className="flex items-center justify-between pt-1 border-t border-border-subtle">
+        <span className="text-xs font-mono text-text-secondary" aria-live="polite">
           Overall: {overallPct}%
         </span>
         {isCompleted && metadata.duration_seconds != null && (
-          <span className="text-xs text-gray-500">
+          <span className="text-xs text-text-secondary">
             Completed in {formatDuration(metadata.duration_seconds)}
           </span>
         )}
         {isFailed && metadata.duration_seconds != null && (
-          <span className="text-xs text-red-400/60">
+          <span className="text-xs text-error">
             Failed after {formatDuration(metadata.duration_seconds)}
           </span>
         )}

@@ -95,7 +95,7 @@ export function TranscriptViewer({ jobId, result }: TranscriptViewerProps) {
     <div className="space-y-3">
       {/* Tabs + actions */}
       <div className="flex items-center justify-between gap-2">
-        <div className="flex gap-0.5 bg-gray-800 rounded p-0.5 overflow-x-auto">
+        <div className="flex gap-0.5 bg-surface-elevated rounded p-0.5 overflow-x-auto">
           {FORMAT_TABS.map(({ key, label }) => {
             const Icon = TAB_ICONS[key];
             return (
@@ -103,10 +103,10 @@ export function TranscriptViewer({ jobId, result }: TranscriptViewerProps) {
                 key={key}
                 type="button"
                 onClick={() => setTab(key)}
-                className={`flex items-center gap-1 px-2.5 py-1.5 rounded text-xs whitespace-nowrap transition-colors ${
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded text-xs whitespace-nowrap transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
                   tab === key
-                    ? "bg-gray-700 text-cyan-400"
-                    : "text-gray-400 hover:text-gray-200"
+                    ? "bg-border-default text-accent-text"
+                    : "text-text-secondary hover:text-text-primary"
                 }`}
               >
                 <Icon size={13} />
@@ -121,20 +121,22 @@ export function TranscriptViewer({ jobId, result }: TranscriptViewerProps) {
             type="button"
             onClick={handleCopy}
             disabled={!currentContent && tab !== "segments"}
-            className="p-1.5 text-gray-500 hover:text-gray-300 transition-colors disabled:opacity-30"
+            aria-label="Copiar transcripción"
+            className="p-1.5 text-text-secondary hover:text-text-primary transition-colors disabled:opacity-30 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
             title="Copy"
           >
-            {copied ? <Check size={15} className="text-green-400" /> : <Copy size={15} />}
+            {copied ? <Check size={15} className="text-success" /> : <Copy size={15} />}
           </button>
           <button
             type="button"
             onClick={handleDownload}
             disabled={downloading}
-            className="p-1.5 text-gray-500 hover:text-gray-300 transition-colors disabled:opacity-50"
+            aria-label="Descargar transcripción"
+            className="p-1.5 text-text-secondary hover:text-text-primary transition-colors disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
             title={`Download ${tab === "segments" ? "TXT" : tab.toUpperCase()}`}
           >
             {downloading ? (
-              <Loader2 size={15} className="animate-spin" />
+              <Loader2 size={15} className="animate-spin motion-reduce:animate-none" />
             ) : (
               <Download size={15} />
             )}
@@ -143,24 +145,24 @@ export function TranscriptViewer({ jobId, result }: TranscriptViewerProps) {
       </div>
 
       {/* Preview */}
-      <div className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 max-h-96 overflow-y-auto">
+      <div className="bg-surface border border-border-default rounded-lg p-4 max-h-96 overflow-y-auto">
         {tab === "segments" ? (
           <div className="space-y-1">
             {result.segments.map((segment, i) => (
               <div key={i} className="flex gap-3 text-sm">
-                <span className="font-mono text-cyan-500 text-xs shrink-0 pt-0.5">
+                <span className="font-mono text-accent-text text-xs shrink-0 pt-0.5">
                   [{formatTimestamp(segment.start)}]
                 </span>
-                <span className="text-gray-200">{segment.text}</span>
+                <span className="text-text-primary">{segment.text}</span>
               </div>
             ))}
           </div>
         ) : loadingPreview && previews[tab] == null ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 size={20} className="animate-spin text-gray-500" />
+            <Loader2 size={20} className="animate-spin motion-reduce:animate-none text-text-secondary" />
           </div>
         ) : (
-          <pre className="text-sm text-gray-200 whitespace-pre-wrap leading-relaxed font-mono">
+          <pre className="text-sm text-text-primary whitespace-pre-wrap leading-relaxed font-mono">
             {previews[tab] ?? ""}
           </pre>
         )}

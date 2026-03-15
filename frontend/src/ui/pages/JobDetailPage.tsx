@@ -51,7 +51,7 @@ export function JobDetailPage() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 size={24} className="animate-spin text-gray-500" />
+        <Loader2 size={24} className="animate-spin motion-reduce:animate-none text-text-secondary" />
       </div>
     );
   }
@@ -62,12 +62,12 @@ export function JobDetailPage() {
         <button
           type="button"
           onClick={() => navigate("/jobs")}
-          className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-200 transition-colors"
+          className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
         >
           <ArrowLeft size={16} />
           Back to jobs
         </button>
-        <p className="text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded px-3 py-2">
+        <p className="text-sm text-error bg-error-muted border border-error rounded px-3 py-2">
           {error ?? "Job not found"}
         </p>
       </div>
@@ -79,41 +79,41 @@ export function JobDetailPage() {
       <button
         type="button"
         onClick={() => navigate("/jobs")}
-        className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-200 transition-colors"
+        className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
       >
         <ArrowLeft size={16} />
         Back to jobs
       </button>
 
       {/* Header */}
-      <div className="bg-gray-900/30 border border-gray-800 rounded-lg p-5 space-y-4">
+      <div className="bg-surface border border-border-default rounded-lg p-5 space-y-4" role="status" aria-live="polite">
         <div className="flex items-center gap-2">
-          <FileVideo size={18} className="text-cyan-400" />
-          <h1 className="text-lg font-semibold text-gray-100">
+          <FileVideo size={18} className="text-accent-text" />
+          <h1 className="text-lg font-semibold text-text-primary">
             {metadata.original_filename}
           </h1>
         </div>
 
         <div className="grid grid-cols-2 gap-3 text-sm">
           <div>
-            <span className="flex items-center gap-1 text-gray-500">
+            <span className="flex items-center gap-1 text-text-secondary">
               <Cpu size={12} />
               Model
             </span>
-            <p className="text-gray-200">{metadata.config.model}</p>
+            <p className="text-text-primary">{metadata.config.model}</p>
           </div>
           <div>
-            <span className="flex items-center gap-1 text-gray-500">
+            <span className="flex items-center gap-1 text-text-secondary">
               <Languages size={12} />
               Language
             </span>
-            <p className="text-gray-200">{metadata.config.language}</p>
+            <p className="text-text-primary">{metadata.config.language}</p>
           </div>
         </div>
 
         <ProgressBar metadata={metadata} />
 
-        <p className="text-[10px] text-gray-600 font-mono">{metadata.job_id}</p>
+        <p className="text-[10px] text-text-muted font-mono">{metadata.job_id}</p>
       </div>
 
       {/* Live Transcript during transcription */}
@@ -128,8 +128,8 @@ export function JobDetailPage() {
 
       {/* Failed State */}
       {metadata.status === JobStatus.FAILED && (
-        <div className="bg-red-400/10 border border-red-400/20 rounded-lg p-4 space-y-3">
-          <div className="flex items-start gap-2 text-red-400">
+        <div className="bg-error-muted border border-error rounded-lg p-4 space-y-3">
+          <div className="flex items-start gap-2 text-error">
             <AlertCircle size={18} className="shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-medium">Transcription failed</p>
@@ -144,10 +144,10 @@ export function JobDetailPage() {
                 type="button"
                 onClick={() => handleRetry(true)}
                 disabled={retrying}
-                className="flex items-center gap-1.5 text-xs text-cyan-300 hover:text-cyan-200 transition-colors disabled:opacity-50"
+                className="flex items-center gap-1.5 text-xs text-accent-text hover:text-accent-text transition-colors disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
               >
                 {retrying ? (
-                  <Loader2 size={12} className="animate-spin" />
+                  <Loader2 size={12} className="animate-spin motion-reduce:animate-none" />
                 ) : (
                   <Play size={12} />
                 )}
@@ -158,10 +158,10 @@ export function JobDetailPage() {
               type="button"
               onClick={() => handleRetry(false)}
               disabled={retrying}
-              className="flex items-center gap-1.5 text-xs text-red-300 hover:text-red-200 transition-colors disabled:opacity-50"
+              className="flex items-center gap-1.5 text-xs text-error hover:text-error transition-colors disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
             >
               {retrying ? (
-                <Loader2 size={12} className="animate-spin" />
+                <Loader2 size={12} className="animate-spin motion-reduce:animate-none" />
               ) : (
                 <RefreshCw size={12} />
               )}

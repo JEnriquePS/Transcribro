@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Inbox, Loader2, ListVideo } from "lucide-react";
 import { JobCard } from "../components/JobCard";
+import { ConfirmDialog } from "../components/ConfirmDialog";
 import { useJobsPolling } from "../../application/hooks/useJobPolling";
 import { deleteJob } from "../../infrastructure/api/client";
 import { useState } from "react";
@@ -9,12 +10,20 @@ export function JobsPage() {
   const navigate = useNavigate();
   const { jobs, isLoading, error } = useJobsPolling(true);
   const [deleting, setDeleting] = useState<string | null>(null);
+  const [jobToDelete, setJobToDelete] = useState<string | null>(null);
 
-  const handleDelete = async (jobId: string, e: React.MouseEvent) => {
+  const handleDelete = (_jobId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setDeleting(jobId);
+    setJobToDelete(_jobId);
+  };
+
+  const confirmDelete = async () => {
+    if (!jobToDelete) return;
+    const id = jobToDelete;
+    setJobToDelete(null);
+    setDeleting(id);
     try {
-      await deleteJob(jobId);
+      await deleteJob(id);
     } catch {
       // Deletion error will be reflected on next poll
     } finally {
@@ -25,7 +34,7 @@ export function JobsPage() {
   if (isLoading && jobs.length === 0) {
     return (
       <div className="flex items-center justify-center py-20">
-        <Loader2 size={24} className="animate-spin text-gray-500" />
+        <Loader2 size={24} className="animate-spin motion-reduce:animate-none text-text-secondary" />
       </div>
     );
   }
@@ -33,7 +42,7 @@ export function JobsPage() {
   if (error) {
     return (
       <div className="max-w-2xl mx-auto">
-        <p className="text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded px-3 py-2">
+        <p className="text-sm text-error bg-error-muted border border-error rounded px-3 py-2">
           {error}
         </p>
       </div>
@@ -42,19 +51,19 @@ export function JobsPage() {
 
   return (
     <div className="max-w-2xl mx-auto space-y-4">
-      <h1 className="flex items-center gap-2 text-xl font-semibold text-gray-100">
-        <ListVideo size={22} className="text-cyan-400" />
+      <h1 className="flex items-center gap-2 text-xl font-semibold text-text-primary">
+        <ListVideo size={22} className="text-accent-text" />
         Jobs
       </h1>
 
       {jobs.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 text-gray-500">
+        <div className="flex flex-col items-center justify-center py-16 text-text-secondary">
           <Inbox size={40} className="mb-3" />
           <p className="text-sm">No transcription jobs yet</p>
           <button
             type="button"
             onClick={() => navigate("/")}
-            className="mt-3 text-sm text-cyan-400 hover:text-cyan-300 transition-colors"
+            className="mt-3 text-sm text-accent-text hover:text-accent-text transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
           >
             Upload a video to get started
           </button>
@@ -72,6 +81,16 @@ export function JobsPage() {
           ))}
         </div>
       )}
+
+      <ConfirmDialog
+        isOpen={jobToDelete !== null}
+        title="Eliminar trabajo"
+        message="Se eliminar\u00e1 permanentemente este trabajo de transcripci\u00f3n. Esta acci\u00f3n no se puede deshacer."
+        confirmLabel="Eliminar"
+        variant="danger"
+        onConfirm={confirmDelete}
+        onCancel={() => setJobToDelete(null)}
+      />
     </div>
   );
 }

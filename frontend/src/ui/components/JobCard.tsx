@@ -5,27 +5,27 @@ import { ProgressBar } from "./ProgressBar";
 const STATUS_BADGE: Record<JobStatus, { label: string; className: string }> = {
   [JobStatus.PENDING]: {
     label: "Pending",
-    className: "bg-gray-600/30 text-gray-400",
+    className: "bg-status-pending-muted text-status-pending",
   },
   [JobStatus.EXTRACTING]: {
     label: "Extracting",
-    className: "bg-blue-500/20 text-blue-400",
+    className: "bg-status-extracting-muted text-status-extracting",
   },
   [JobStatus.TRANSCRIBING]: {
     label: "Transcribing",
-    className: "bg-cyan-500/20 text-cyan-400",
+    className: "bg-status-transcribing-muted text-status-transcribing",
   },
   [JobStatus.FORMATTING]: {
     label: "Formatting",
-    className: "bg-indigo-500/20 text-indigo-400",
+    className: "bg-status-formatting-muted text-status-formatting",
   },
   [JobStatus.COMPLETED]: {
     label: "Completed",
-    className: "bg-green-500/20 text-green-400",
+    className: "bg-success-muted text-success",
   },
   [JobStatus.FAILED]: {
     label: "Failed",
-    className: "bg-red-500/20 text-red-400",
+    className: "bg-error-muted text-error",
   },
 };
 
@@ -51,12 +51,12 @@ export function JobCard({ job, onClick, onDelete, isDeleting }: JobCardProps) {
     <button
       type="button"
       onClick={onClick}
-      className="group w-full text-left bg-gray-900/50 border border-gray-800 rounded-lg p-4 hover:border-gray-600 transition-colors cursor-pointer"
+      className="group w-full text-left bg-surface border border-border-default rounded-lg p-4 hover:border-border-default transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
     >
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-2 min-w-0">
-          <FileVideo size={16} className="text-cyan-400 shrink-0" />
-          <span className="text-sm text-gray-200 truncate">
+          <FileVideo size={16} className="text-accent-text shrink-0" />
+          <span className="text-sm text-text-primary truncate">
             {job.original_filename}
           </span>
         </div>
@@ -71,11 +71,11 @@ export function JobCard({ job, onClick, onDelete, isDeleting }: JobCardProps) {
               type="button"
               onClick={onDelete}
               disabled={isDeleting}
-              className="opacity-0 group-hover:opacity-100 rounded p-1 text-gray-500 hover:text-red-400 transition-all disabled:opacity-50"
+              className="opacity-0 group-hover:opacity-100 rounded p-1 text-text-secondary hover:text-error transition-all disabled:opacity-50 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:opacity-100"
               title="Delete job"
             >
               {isDeleting ? (
-                <Loader2 size={14} className="animate-spin" />
+                <Loader2 size={14} className="animate-spin motion-reduce:animate-none" />
               ) : (
                 <Trash2 size={14} />
               )}
@@ -89,13 +89,13 @@ export function JobCard({ job, onClick, onDelete, isDeleting }: JobCardProps) {
       )}
 
       {job.status === JobStatus.FAILED && job.error && (
-        <div className="flex items-start gap-2 mt-2 text-xs text-red-400 bg-red-400/10 rounded px-2 py-1.5">
+        <div className="flex items-start gap-2 mt-2 text-xs text-error bg-error-muted rounded px-2 py-1.5">
           <AlertCircle size={14} className="shrink-0 mt-0.5" />
           <span className="line-clamp-2">{job.error}</span>
         </div>
       )}
 
-      <p className="text-[10px] text-gray-600 mt-2 font-mono">
+      <p className="text-[10px] text-text-muted mt-2 font-mono">
         {job.job_id}
       </p>
     </button>

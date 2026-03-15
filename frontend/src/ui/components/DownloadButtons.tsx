@@ -37,10 +37,10 @@ export function DownloadButtons({ jobId, formats }: DownloadButtonsProps) {
           type="button"
           disabled={downloading !== null}
           onClick={() => handleDownload(format)}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-800 border border-gray-700 rounded text-sm text-gray-200 hover:border-cyan-400 hover:text-cyan-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="flex items-center gap-1.5 px-3 py-1.5 bg-surface-elevated border border-border-default rounded text-sm text-text-primary hover:border-accent hover:text-accent-text transition-colors disabled:opacity-50 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
         >
           {downloading === format ? (
-            <Loader2 size={14} className="animate-spin" />
+            <Loader2 size={14} className="animate-spin motion-reduce:animate-none" />
           ) : (
             <Download size={14} />
           )}

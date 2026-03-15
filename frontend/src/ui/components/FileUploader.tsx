@@ -117,20 +117,20 @@ export function FileUploader({ onFilesSelected }: FileUploaderProps) {
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         onClick={handleClick}
-        className={`w-full border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer ${
+        className={`w-full border-2 border-dashed rounded-lg p-8 text-center transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
           dragOver
-            ? "border-cyan-400 bg-cyan-400/10"
-            : "border-gray-700 hover:border-gray-500 bg-gray-900/50"
+            ? "border-accent bg-accent-muted"
+            : "border-border-default hover:border-border-default bg-surface"
         }`}
       >
         <Upload
-          className={`mx-auto mb-3 ${dragOver ? "text-cyan-400" : "text-gray-500"}`}
+          className={`mx-auto mb-3 ${dragOver ? "text-accent-text" : "text-text-secondary"}`}
           size={32}
         />
-        <p className="text-sm text-gray-300">
+        <p className="text-sm text-text-secondary">
           Drag & drop video files here, or click to browse
         </p>
-        <p className="text-xs text-gray-500 mt-1">
+        <p className="text-xs text-text-secondary mt-1">
           Supported: {[...ALLOWED_EXTENSIONS].join(", ")}
         </p>
       </button>
@@ -145,7 +145,7 @@ export function FileUploader({ onFilesSelected }: FileUploaderProps) {
       />
 
       {error && (
-        <p className="text-sm text-red-400 bg-red-400/10 border border-red-400/20 rounded px-3 py-2">
+        <p className="text-sm text-error bg-error-muted border border-error rounded px-3 py-2">
           {error}
         </p>
       )}
@@ -155,21 +155,22 @@ export function FileUploader({ onFilesSelected }: FileUploaderProps) {
           {selectedFiles.map((file, i) => (
             <li
               key={`${file.name}-${file.size}-${i}`}
-              className="flex items-center justify-between bg-gray-800/50 border border-gray-700/50 rounded px-3 py-2"
+              className="flex items-center justify-between bg-surface-elevated border border-border-subtle rounded px-3 py-2"
             >
               <div className="flex items-center gap-2 min-w-0">
-                <FileVideo size={16} className="text-cyan-400 shrink-0" />
-                <span className="text-sm text-gray-200 truncate">
+                <FileVideo size={16} className="text-accent-text shrink-0" />
+                <span className="text-sm text-text-primary truncate">
                   {file.name}
                 </span>
-                <span className="text-xs text-gray-500 shrink-0">
+                <span className="text-xs text-text-secondary shrink-0">
                   {formatFileSize(file.size)}
                 </span>
               </div>
               <button
                 type="button"
                 onClick={() => removeFile(i)}
-                className="text-gray-500 hover:text-red-400 transition-colors ml-2 shrink-0"
+                aria-label="Eliminar archivo"
+                className="text-text-secondary hover:text-error transition-colors ml-2 shrink-0 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
               >
                 <X size={16} />
               </button>

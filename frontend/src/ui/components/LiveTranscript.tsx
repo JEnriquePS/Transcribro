@@ -64,11 +64,11 @@ export function LiveTranscript({ jobId, isActive }: LiveTranscriptProps) {
         <div className="flex items-center gap-2">
           {isActive && (
             <span className="relative flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+              <span className="animate-ping motion-reduce:animate-none absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-success" />
             </span>
           )}
-          <span className="text-xs text-gray-400 font-medium">
+          <span className="text-xs text-text-secondary font-medium">
             {isActive ? "Live transcript" : "Partial transcript"}
           </span>
         </div>
@@ -76,30 +76,32 @@ export function LiveTranscript({ jobId, isActive }: LiveTranscriptProps) {
           type="button"
           onClick={handleCopy}
           disabled={!data.text}
-          className="flex items-center gap-1 text-xs text-gray-500 hover:text-gray-300 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+          aria-label="Copiar transcripción"
+          className="flex items-center gap-1 text-xs text-text-secondary hover:text-text-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
           title="Copy transcript"
         >
-          {copied ? <Check size={14} className="text-green-400" /> : <Copy size={14} />}
+          {copied ? <Check size={14} className="text-success" /> : <Copy size={14} />}
         </button>
       </div>
 
       <div
         ref={scrollRef}
-        className="bg-gray-900/50 border border-gray-800 rounded-lg p-4 max-h-64 overflow-y-auto"
+        aria-live="polite"
+        className="bg-surface border border-border-default rounded-lg p-4 max-h-64 overflow-y-auto"
       >
         {data.segments.length > 0 ? (
           <div className="space-y-1">
             {data.segments.map((segment, i) => (
               <div key={i} className="flex gap-3 text-sm">
-                <span className="font-mono text-cyan-500 text-xs shrink-0 pt-0.5">
+                <span className="font-mono text-accent-text text-xs shrink-0 pt-0.5">
                   [{formatTimestamp(segment.start)}]
                 </span>
-                <span className="text-gray-200">{segment.text}</span>
+                <span className="text-text-primary">{segment.text}</span>
               </div>
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-600 italic">
+          <p className="text-sm text-text-muted italic">
             {isActive ? "Waiting for transcript..." : "No transcript available"}
           </p>
         )}

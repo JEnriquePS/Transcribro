@@ -62,8 +62,8 @@ export function TranscriptionConfig({
     <div className="space-y-5">
       {/* Language Selection */}
       <fieldset>
-        <legend className="flex items-center gap-1.5 text-sm font-medium text-gray-300 mb-2">
-          <Languages size={14} className="text-gray-400" />
+        <legend className="flex items-center gap-1.5 text-sm font-medium text-text-secondary mb-2">
+          <Languages size={14} className="text-text-secondary" />
           Language
         </legend>
         <div className="flex gap-4">
@@ -78,9 +78,9 @@ export function TranscriptionConfig({
                 value={value}
                 checked={config.language === value}
                 onChange={() => handleLanguageChange(value)}
-                className="accent-cyan-400"
+                className="accent-accent focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               />
-              <span className="text-sm text-gray-200">{label}</span>
+              <span className="text-sm text-text-primary">{label}</span>
             </label>
           ))}
         </div>
@@ -90,9 +90,9 @@ export function TranscriptionConfig({
       <div>
         <label
           htmlFor="model-select"
-          className="flex items-center gap-1.5 text-sm font-medium text-gray-300 mb-2"
+          className="flex items-center gap-1.5 text-sm font-medium text-text-secondary mb-2"
         >
-          <Cpu size={14} className="text-gray-400" />
+          <Cpu size={14} className="text-text-secondary" />
           Model
         </label>
         <div className="relative">
@@ -100,7 +100,7 @@ export function TranscriptionConfig({
             id="model-select"
             value={config.model}
             onChange={(e) => handleModelChange(e.target.value)}
-            className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm text-gray-200 appearance-none cursor-pointer focus:outline-none focus:border-cyan-400"
+            className="w-full bg-surface-elevated border border-border-default rounded px-3 py-2 text-sm text-text-primary appearance-none cursor-pointer focus:outline-none focus:border-accent focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
           >
             {MODEL_OPTIONS.map(({ value, label, size }) => (
               <option key={value} value={value}>
@@ -111,7 +111,7 @@ export function TranscriptionConfig({
         </div>
         {availableModels.length > 0 &&
           !availableModelNames.has(config.model) && (
-            <p className="flex items-center gap-1.5 mt-1.5 text-xs text-amber-400">
+            <p className="flex items-center gap-1.5 mt-1.5 text-xs text-warning">
               <AlertTriangle size={14} />
               Model not downloaded. Transcription will fail until it is
               available.
@@ -121,8 +121,8 @@ export function TranscriptionConfig({
 
       {/* Output Formats */}
       <fieldset>
-        <legend className="flex items-center gap-1.5 text-sm font-medium text-gray-300 mb-2">
-          <FileOutput size={14} className="text-gray-400" />
+        <legend className="flex items-center gap-1.5 text-sm font-medium text-text-secondary mb-2">
+          <FileOutput size={14} className="text-text-secondary" />
           Output Formats
         </legend>
         <div className="flex gap-4">
@@ -135,9 +135,9 @@ export function TranscriptionConfig({
                 type="checkbox"
                 checked={config.outputFormats.includes(format)}
                 onChange={() => handleFormatToggle(format)}
-                className="accent-cyan-400"
+                className="accent-accent focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
               />
-              <span className="text-sm text-gray-200 uppercase">{format}</span>
+              <span className="text-sm text-text-primary uppercase">{format}</span>
             </label>
           ))}
         </div>
