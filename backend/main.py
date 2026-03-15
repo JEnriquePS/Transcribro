@@ -5,11 +5,11 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from config import settings
-from logger import get_logger, setup_logging
-from application.job_manager import job_manager
+from infrastructure.http.dependencies import get_job_manager
 from infrastructure.http.routes.jobs import router as jobs_router
 from infrastructure.http.routes.models import router as models_router
 from infrastructure.http.routes.transcription import router as transcription_router
+from logger import get_logger, setup_logging
 from startup import validate_environment
 
 setup_logging()
@@ -22,6 +22,7 @@ async def lifespan(app: FastAPI):
     validate_environment()
     settings.jobs_path.mkdir(parents=True, exist_ok=True)
     settings.models_path.mkdir(parents=True, exist_ok=True)
+    job_manager = get_job_manager()
     log.info("Starting job worker")
     await job_manager.start_worker()
     yield

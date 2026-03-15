@@ -56,15 +56,15 @@ class TestUploadValidation:
         file_content = b"fake mp4 content"
 
         with (
-            patch("infrastructure.http.routes.transcription.job_manager.create_job") as mock_create,
-            patch("infrastructure.http.routes.transcription.job_manager.save_uploaded_file", new_callable=AsyncMock),
-            patch("infrastructure.http.routes.transcription.job_manager.enqueue_job", new_callable=AsyncMock),
+            patch("infrastructure.http.routes.transcription.get_job_manager") as mock_get_jm,
         ):
             from domain.entities import JobMetadata
 
-            mock_create.return_value = JobMetadata(
+            mock_jm = mock_get_jm.return_value
+            mock_jm.create_job.return_value = JobMetadata(
                 job_id="test123", original_filename="test.mp4"
             )
+            mock_jm.enqueue_job = AsyncMock()
 
             response = await client.post(
                 "/api/transcribe",
@@ -78,18 +78,26 @@ class TestUploadValidation:
 class TestJobNotFound:
     @pytest.mark.asyncio
     async def test_get_nonexistent_job(self, client):
-        response = await client.get("/api/jobs/nonexistent")
+        response = await client.get("/api/jobs/00000000000000000000000000000000")
         assert response.status_code == 404
 
     @pytest.mark.asyncio
     async def test_delete_nonexistent_job(self, client):
-        response = await client.delete("/api/jobs/nonexistent")
+        response = await client.delete("/api/jobs/00000000000000000000000000000000")
         assert response.status_code == 404
+
+    @pytest.mark.asyncio
+    async def test_rejects_invalid_job_id(self, client):
+        response = await client.get("/api/jobs/nonexistent")
+        assert response.status_code == 422
 
 
 class TestDownloadFormat:
     @pytest.mark.asyncio
     async def test_rejects_invalid_format(self, client):
-        response = await client.get("/api/jobs/someid/download", params={"format": "pdf"})
+        response = await client.get(
+            "/api/jobs/00000000000000000000000000000000/download",
+            params={"format": "pdf"},
+        )
         assert response.status_code == 400
         assert "Unsupported format" in response.json()["detail"]

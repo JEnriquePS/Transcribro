@@ -18,6 +18,17 @@ def format_timestamp_display(seconds: float) -> str:
     return f"{minutes}:{secs:02d}"
 
 
+class WhisperFormatter:
+    """Formatter implementation for whisper.cpp transcription results."""
+
+    def format(self, result: TranscriptResult) -> str:
+        """Create enriched JSON string from a TranscriptResult.
+
+        Adds human-readable timestamps (start_formatted, end_formatted) to each segment.
+        """
+        return format_enriched_json(result)
+
+
 def format_enriched_json(result: TranscriptResult) -> str:
     """Create enriched JSON string from a TranscriptResult.
 

@@ -6,7 +6,7 @@ from infrastructure.services.transcriber import get_model_path, parse_whisper_js
 
 class TestGetModelPath:
     def test_raises_when_model_missing(self, tmp_path):
-        with pytest.raises(FileNotFoundError, match="Model file not found"):
+        with pytest.raises(FileNotFoundError, match="is not available"):
             get_model_path(tmp_path, "large-v3")
 
     def test_returns_path_when_exists(self, tmp_path):

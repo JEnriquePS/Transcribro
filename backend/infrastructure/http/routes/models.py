@@ -9,6 +9,9 @@ router = APIRouter(prefix="/api")
 
 KNOWN_MODEL_NAMES = {"tiny", "base", "small", "medium", "large-v3"}
 
+# TODO: Extract model management logic into an application service (ModelManager)
+# to keep route handlers thin and follow Clean Architecture boundaries.
+
 
 @router.get("/models")
 def list_models():

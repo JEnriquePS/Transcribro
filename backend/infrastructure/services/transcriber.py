@@ -1,17 +1,17 @@
 import asyncio
 import json
 import re
-from collections.abc import Awaitable, Callable
 from pathlib import Path
 
 from domain.entities import TranscriptResult, TranscriptSegment
+from domain.interfaces import ProgressCallback, SegmentCallback
+from logger import get_logger
 
-ProgressCallback = Callable[[float], Awaitable[None]]
-SegmentCallback = Callable[[float, float, str], Awaitable[None]]
+log = get_logger("transcriber")
 
 _PROGRESS_RE = re.compile(r"progress\s*=\s*(\d+)%")
 
-# Parses: [00:01:23.456 --> 00:01:28.789]   texto aquí
+# Parses: [00:01:23.456 --> 00:01:28.789]   texto aqui
 _SEGMENT_RE = re.compile(
     r"^\[(\d{2}):(\d{2}):(\d{2})\.(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})\.(\d{3})\]\s*(.+)"
 )
@@ -24,123 +24,135 @@ def _parse_timestamp(h: str, m: str, s: str, ms: str) -> float:
     return int(h) * 3600 + int(m) * 60 + int(s) + int(ms) / 1000
 
 
-async def transcribe_audio(
-    audio_path: Path,
-    output_dir: Path,
-    language: str,
-    model_size: str,
-    whisper_cli: Path,
-    models_dir: Path,
-    threads: int,
-    on_progress: ProgressCallback | None = None,
-    on_segment: SegmentCallback | None = None,
-    offset_ms: int = 0,
-) -> TranscriptResult:
-    """Run whisper-cli to transcribe an audio file.
+class WhisperTranscriber:
+    """Transcriber implementation using whisper.cpp CLI."""
 
-    Reads stderr line-by-line to parse progress and transcript segments
-    from whisper.cpp output. Returns a TranscriptResult parsed from the
-    JSON output. Raises RuntimeError if whisper-cli fails or times out.
-    """
-    model_path = get_model_path(models_dir, model_size)
-    output_prefix = output_dir / "transcript"
+    def __init__(
+        self,
+        whisper_cli_path: Path,
+        models_path: Path,
+    ) -> None:
+        self._whisper_cli_path = whisper_cli_path
+        self._models_path = models_path
 
-    cmd = [
-        str(whisper_cli),
-        "-m", str(model_path),
-        "-f", str(audio_path),
-        "-of", str(output_prefix),
-        "--output-json",
-        "--output-srt",
-        "--output-vtt",
-        "--output-txt",
-        "--print-progress",
-        "-t", str(threads),
-    ]
+    async def transcribe(
+        self,
+        audio_path: Path,
+        output_dir: Path,
+        language: str,
+        model_size: str,
+        threads: int,
+        on_progress: ProgressCallback | None = None,
+        on_segment: SegmentCallback | None = None,
+        offset_ms: int = 0,
+    ) -> TranscriptResult:
+        """Run whisper-cli to transcribe an audio file.
 
-    if offset_ms > 0:
-        cmd.extend(["--offset", str(offset_ms)])
+        Reads stderr line-by-line to parse progress and transcript segments
+        from whisper.cpp output. Returns a TranscriptResult parsed from the
+        JSON output. Raises RuntimeError if whisper-cli fails or times out.
+        """
+        model_path = get_model_path(self._models_path, model_size)
+        output_prefix = output_dir / "transcript"
 
-    if language == "auto":
-        cmd.append("--detect-language")
-    else:
-        cmd.extend(["-l", language])
+        cmd = [
+            str(self._whisper_cli_path),
+            "-m", str(model_path),
+            "-f", str(audio_path),
+            "-of", str(output_prefix),
+            "--output-json",
+            "--output-srt",
+            "--output-vtt",
+            "--output-txt",
+            "--print-progress",
+            "-t", str(threads),
+        ]
 
-    process = await asyncio.create_subprocess_exec(
-        *cmd,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
+        if offset_ms > 0:
+            cmd.extend(["--offset", str(offset_ms)])
 
-    assert process.stderr is not None
-    assert process.stdout is not None
-    stderr_lines: list[str] = []
+        if language == "auto":
+            cmd.append("--detect-language")
+        else:
+            cmd.extend(["-l", language])
 
-    async def _read_stdout() -> None:
-        """Read stdout lines and parse transcript segments."""
-        assert process.stdout is not None
-        while True:
-            line = await process.stdout.readline()
-            if not line:
-                break
-            decoded = _ANSI_RE.sub("", line.decode(errors="replace")).strip()
-            if not decoded:
-                continue
-            seg_match = _SEGMENT_RE.match(decoded)
-            if seg_match is not None and on_segment is not None:
-                g = seg_match.groups()
-                start = _parse_timestamp(g[0], g[1], g[2], g[3])
-                end = _parse_timestamp(g[4], g[5], g[6], g[7])
-                text = g[8].strip()
-                await on_segment(start, end, text)
-
-    stdout_task = asyncio.create_task(_read_stdout())
-
-    try:
-        while True:
-            try:
-                line = await asyncio.wait_for(
-                    process.stderr.readline(), timeout=_READLINE_TIMEOUT,
-                )
-            except TimeoutError:
-                process.kill()
-                await process.wait()
-                raise RuntimeError(
-                    "whisper-cli timed out — no output for 5 minutes"
-                ) from None
-
-            if not line:
-                break
-
-            decoded = _ANSI_RE.sub("", line.decode(errors="replace")).strip()
-            stderr_lines.append(decoded)
-
-            # Parse progress lines from stderr
-            match = _PROGRESS_RE.search(decoded)
-            if match is not None and on_progress is not None:
-                pct = int(match.group(1)) / 100.0
-                await on_progress(pct)
-
-    except RuntimeError:
-        stdout_task.cancel()
-        raise
-    except Exception:
-        process.kill()
-        await process.wait()
-        stdout_task.cancel()
-        raise
-
-    await process.wait()
-    await stdout_task
-
-    if process.returncode != 0:
-        raise RuntimeError(
-            f"whisper-cli failed (code {process.returncode}): "
-            f"{chr(10).join(stderr_lines[-20:])}"
+        process = await asyncio.create_subprocess_exec(
+            *cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE,
         )
 
-    json_path = Path(f"{output_prefix}.json")
-    return parse_whisper_json(json_path, language)
+        assert process.stderr is not None
+        assert process.stdout is not None
+        stderr_lines: list[str] = []
+
+        async def _read_stdout() -> None:
+            """Read stdout lines and parse transcript segments."""
+            assert process.stdout is not None
+            while True:
+                line = await process.stdout.readline()
+                if not line:
+                    break
+                decoded = _ANSI_RE.sub("", line.decode(errors="replace")).strip()
+                if not decoded:
+                    continue
+                seg_match = _SEGMENT_RE.match(decoded)
+                if seg_match is not None and on_segment is not None:
+                    g = seg_match.groups()
+                    start = _parse_timestamp(g[0], g[1], g[2], g[3])
+                    end = _parse_timestamp(g[4], g[5], g[6], g[7])
+                    text = g[8].strip()
+                    await on_segment(start, end, text)
+
+        stdout_task = asyncio.create_task(_read_stdout())
+
+        try:
+            while True:
+                try:
+                    line = await asyncio.wait_for(
+                        process.stderr.readline(), timeout=_READLINE_TIMEOUT,
+                    )
+                except TimeoutError:
+                    process.kill()
+                    await process.wait()
+                    raise RuntimeError(
+                        "whisper-cli timed out -- no output for 5 minutes"
+                    ) from None
+
+                if not line:
+                    break
+
+                decoded = _ANSI_RE.sub("", line.decode(errors="replace")).strip()
+                stderr_lines.append(decoded)
+
+                # Parse progress lines from stderr
+                match = _PROGRESS_RE.search(decoded)
+                if match is not None and on_progress is not None:
+                    pct = int(match.group(1)) / 100.0
+                    await on_progress(pct)
+
+        except RuntimeError:
+            stdout_task.cancel()
+            raise
+        except Exception:
+            process.kill()
+            await process.wait()
+            stdout_task.cancel()
+            raise
+
+        await process.wait()
+        await stdout_task
+
+        if process.returncode != 0:
+            log.error(
+                "whisper-cli failed (code %d): %s",
+                process.returncode,
+                chr(10).join(stderr_lines[-20:]),
+            )
+            raise RuntimeError("Transcription engine failed")
+
+        json_path = Path(f"{output_prefix}.json")
+        return parse_whisper_json(json_path, language)
 
 
 def get_model_path(models_dir: Path, model_size: str) -> Path:
@@ -150,10 +162,12 @@ def get_model_path(models_dir: Path, model_size: str) -> Path:
     """
     model_path = models_dir / f"ggml-{model_size}.bin"
     if not model_path.exists():
-        raise FileNotFoundError(
-            f"Model file not found: {model_path}. "
-            f"Available models: {[p.name for p in models_dir.glob('ggml-*.bin')]}"
+        log.error(
+            "Model file not found: %s. Available: %s",
+            model_path,
+            [p.name for p in models_dir.glob("ggml-*.bin")],
         )
+        raise FileNotFoundError(f"Model '{model_size}' is not available")
     return model_path
 
 
@@ -168,12 +182,14 @@ def parse_whisper_json(json_path: Path, requested_language: str) -> TranscriptRe
     Raises RuntimeError if the JSON file is missing or malformed.
     """
     if not json_path.exists():
-        raise RuntimeError(f"Whisper JSON output not found: {json_path}")
+        log.error("Whisper JSON output not found: %s", json_path)
+        raise RuntimeError("Transcription output not found")
 
     try:
         raw = json.loads(json_path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError) as exc:
-        raise RuntimeError(f"Failed to read whisper JSON output: {exc}") from exc
+        log.error("Failed to read whisper JSON output %s: %s", json_path, exc)
+        raise RuntimeError("Failed to read transcription output") from exc
 
     transcription = raw.get("transcription", [])
     detected_language = raw.get("result", {}).get("language", requested_language)

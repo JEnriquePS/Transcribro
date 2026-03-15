@@ -1,23 +1,26 @@
 import json
 from pathlib import Path
+from typing import Annotated
 
 from fastapi import APIRouter, HTTPException
+from fastapi import Path as FastAPIPath
 from fastapi.responses import FileResponse
 
-from config import settings
-from application.job_manager import job_manager
+from domain.errors import InvalidJobStateError, JobNotFoundError, UnsupportedFormatError
+from infrastructure.http.dependencies import get_job_manager
 
 router = APIRouter(prefix="/api")
 
 ALLOWED_DOWNLOAD_FORMATS = {"txt", "json", "srt", "vtt"}
 
+JobId = Annotated[str, FastAPIPath(pattern=r"^[a-f0-9]{32}$")]
+
 
 @router.get("/jobs")
 def list_jobs(limit: int = 50, offset: int = 0):
     """List transcription jobs with pagination."""
-    all_jobs = job_manager.list_jobs()
-    total = len(all_jobs)
-    page = all_jobs[offset : offset + limit]
+    job_manager = get_job_manager()
+    page, total = job_manager.list_jobs(limit, offset)
     return {
         "jobs": [j.model_dump() for j in page],
         "total": total,
@@ -27,11 +30,12 @@ def list_jobs(limit: int = 50, offset: int = 0):
 
 
 @router.get("/jobs/{job_id}")
-def get_job(job_id: str):
+def get_job(job_id: JobId):
     """Get job metadata and transcript result if completed."""
+    job_manager = get_job_manager()
     try:
         metadata = job_manager.get_job(job_id)
-    except FileNotFoundError:
+    except JobNotFoundError:
         raise HTTPException(status_code=404, detail=f"Job not found: {job_id}") from None
 
     response = metadata.model_dump()
@@ -48,7 +52,7 @@ def get_job(job_id: str):
 
 
 @router.get("/jobs/{job_id}/download")
-def download_job_file(job_id: str, format: str = "srt"):
+def download_job_file(job_id: JobId, format: str = "srt"):
     """Download a transcription output file."""
     if format not in ALLOWED_DOWNLOAD_FORMATS:
         raise HTTPException(
@@ -56,11 +60,12 @@ def download_job_file(job_id: str, format: str = "srt"):
             detail=f"Unsupported format: {format}. Supported: {sorted(ALLOWED_DOWNLOAD_FORMATS)}",
         )
 
+    job_manager = get_job_manager()
     try:
         file_path = job_manager.get_job_file(job_id, format)
     except FileNotFoundError:
         raise HTTPException(status_code=404, detail=f"Output file not found for job {job_id}") from None
-    except ValueError as exc:
+    except UnsupportedFormatError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from None
 
     media_types = {
@@ -73,7 +78,7 @@ def download_job_file(job_id: str, format: str = "srt"):
     try:
         metadata = job_manager.get_job(job_id)
         stem = Path(metadata.original_filename).stem
-    except FileNotFoundError:
+    except JobNotFoundError:
         stem = "transcript"
 
     return FileResponse(
@@ -84,27 +89,21 @@ def download_job_file(job_id: str, format: str = "srt"):
 
 
 @router.get("/jobs/{job_id}/partial-transcript")
-def get_partial_transcript(job_id: str):
+def get_partial_transcript(job_id: JobId):
     """Return partial transcript segments captured during transcription."""
-    segments_path = settings.jobs_path / job_id / "partial_segments.json"
-    if not segments_path.exists():
-        return {"segments": [], "text": ""}
-    try:
-        segments = json.loads(segments_path.read_text(encoding="utf-8"))
-    except (json.JSONDecodeError, OSError):
-        return {"segments": [], "text": ""}
-    text = " ".join(s["text"] for s in segments)
-    return {"segments": segments, "text": text}
+    job_manager = get_job_manager()
+    return job_manager.get_partial_transcript(job_id)
 
 
 @router.post("/jobs/{job_id}/retry")
-async def retry_job(job_id: str, resume: bool = False):
+async def retry_job(job_id: JobId, resume: bool = False):
     """Retry a failed job. If resume=True, continues from last offset."""
+    job_manager = get_job_manager()
     try:
         metadata = job_manager.retry_job(job_id, resume=resume)
-    except FileNotFoundError:
+    except JobNotFoundError:
         raise HTTPException(status_code=404, detail=f"Job not found: {job_id}") from None
-    except ValueError as exc:
+    except InvalidJobStateError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from None
 
     await job_manager.enqueue_job(job_id)
@@ -112,11 +111,12 @@ async def retry_job(job_id: str, resume: bool = False):
 
 
 @router.delete("/jobs/{job_id}")
-def delete_job(job_id: str):
+def delete_job(job_id: JobId):
     """Delete a job and all its files."""
+    job_manager = get_job_manager()
     try:
         job_manager.get_job(job_id)
-    except FileNotFoundError:
+    except JobNotFoundError:
         raise HTTPException(status_code=404, detail=f"Job not found: {job_id}") from None
 
     job_manager.delete_job(job_id)
