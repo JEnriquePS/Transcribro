@@ -31,9 +31,11 @@ class WhisperTranscriber:
         self,
         whisper_cli_path: Path,
         models_path: Path,
+        no_speech_thold: float = 0.6,
     ) -> None:
         self._whisper_cli_path = whisper_cli_path
         self._models_path = models_path
+        self._no_speech_thold = no_speech_thold
 
     async def transcribe(
         self,
@@ -66,6 +68,7 @@ class WhisperTranscriber:
             "--output-txt",
             "--print-progress",
             "-t", str(threads),
+            "--no-speech-thold", str(self._no_speech_thold),
         ]
 
         if offset_ms > 0:

@@ -21,6 +21,7 @@ _extractor = FFmpegAudioExtractor()
 _transcriber = WhisperTranscriber(
     whisper_cli_path=settings.whisper_cli_path,
     models_path=settings.models_path,
+    no_speech_thold=settings.whisper_no_speech_thold,
 )
 _formatter = WhisperFormatter()
 

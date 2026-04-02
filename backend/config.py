@@ -12,6 +12,7 @@ class Settings(BaseSettings):
     default_model: str = "large-v3"
     default_language: str = "es"
     whisper_threads: int = 8
+    whisper_no_speech_thold: float = 0.6
     max_file_size: int = 2 * 1024 * 1024 * 1024  # 2 GB
     allowed_extensions: frozenset[str] = frozenset(
         {".mp4", ".mkv", ".avi", ".mov", ".webm", ".mp3", ".wav", ".flac", ".ogg", ".m4a"}
