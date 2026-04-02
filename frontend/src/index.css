@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
 
 @theme {
   /* Surface colors */
@@ -16,11 +17,15 @@
   --color-border-default: var(--border-default);
   --color-border-subtle: var(--border-subtle);
 
-  /* Accent */
+  /* Accent / Brand */
   --color-accent: var(--accent);
   --color-accent-hover: var(--accent-hover);
   --color-accent-muted: var(--accent-muted);
   --color-accent-text: var(--accent-text);
+
+  /* CTA */
+  --color-cta: var(--cta);
+  --color-cta-hover: var(--cta-hover);
 
   /* Feedback */
   --color-success: var(--success);
@@ -46,7 +51,7 @@
 /* Light theme (default) */
 :root {
   --surface: #ffffff;
-  --surface-elevated: #f8fafc;
+  --surface-elevated: #f0fdfa;
   --surface-overlay: rgba(0, 0, 0, 0.5);
 
   --text-primary: #0f172a;
@@ -57,10 +62,15 @@
   --border-default: #e2e8f0;
   --border-subtle: #f1f5f9;
 
-  --accent: #0891b2;
-  --accent-hover: #0e7490;
-  --accent-muted: rgba(8, 145, 178, 0.1);
-  --accent-text: #0891b2;
+  /* Brand: teal — MASTER primary #0D9488 */
+  --accent: #0d9488;
+  --accent-hover: #0b7c74;
+  --accent-muted: rgba(13, 148, 136, 0.1);
+  --accent-text: #0d9488;
+
+  /* CTA: orange — MASTER #F97316 */
+  --cta: #f97316;
+  --cta-hover: #ea6c0a;
 
   --success: #16a34a;
   --success-muted: rgba(22, 163, 74, 0.1);
@@ -95,10 +105,15 @@
   --border-default: #374151;
   --border-subtle: #1f2937;
 
-  --accent: #22d3ee;
-  --accent-hover: #06b6d4;
-  --accent-muted: rgba(34, 211, 238, 0.1);
-  --accent-text: #22d3ee;
+  /* Brand: teal desaturado en dark — evita vibración sobre fondo oscuro */
+  --accent: #2dd4bf;
+  --accent-hover: #14b8a6;
+  --accent-muted: rgba(45, 212, 191, 0.1);
+  --accent-text: #2dd4bf;
+
+  /* CTA: naranja ligeramente suavizado en dark */
+  --cta: #fb923c;
+  --cta-hover: #f97316;
 
   --success: #4ade80;
   --success-muted: rgba(74, 222, 128, 0.1);
@@ -117,4 +132,9 @@
   --status-transcribing-muted: rgba(34, 211, 238, 0.2);
   --status-formatting: #818cf8;
   --status-formatting-muted: rgba(129, 140, 248, 0.2);
+}
+
+/* Base typography — Plus Jakarta Sans (MASTER design system) */
+*, *::before, *::after {
+  font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
 }

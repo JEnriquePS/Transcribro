@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Loader2, Sparkles, Upload } from "lucide-react";
+import { toast } from "sonner";
 import { FileUploader } from "../components/FileUploader";
 import {
   TranscriptionConfig,
@@ -19,7 +20,6 @@ export function UploadPage() {
   });
   const [models, setModels] = useState<readonly ModelInfo[]>([]);
   const [submitting, setSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     getModels()
@@ -34,7 +34,6 @@ export function UploadPage() {
 
   const handleFilesSelected = useCallback((selected: File[]) => {
     setFiles(selected);
-    setError(null);
   }, []);
 
   const handleConfigChange = useCallback((next: TranscriptionConfigValues) => {
@@ -45,7 +44,6 @@ export function UploadPage() {
     if (files.length === 0) return;
 
     setSubmitting(true);
-    setError(null);
 
     try {
       const apiConfig = {
@@ -62,8 +60,8 @@ export function UploadPage() {
       }
     } catch (err) {
       const message =
-        err instanceof Error ? err.message : "Failed to start transcription";
-      setError(message);
+        err instanceof Error ? err.message : "No se pudo iniciar la transcripción";
+      toast.error(message);
     } finally {
       setSubmitting(false);
     }
@@ -93,24 +91,18 @@ export function UploadPage() {
         />
       </div>
 
-      {error && (
-        <p className="text-sm text-error bg-error-muted border border-error rounded px-3 py-2">
-          {error}
-        </p>
-      )}
-
       <button
         type="button"
         disabled={files.length === 0 || submitting}
         onClick={handleSubmit}
-        className="flex items-center gap-2 px-5 py-2.5 bg-accent hover:bg-accent-hover text-text-inverse font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
+        className="flex items-center gap-2 px-5 py-2.5 bg-cta hover:bg-cta-hover text-white font-medium rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer focus-visible:ring-2 focus-visible:ring-cta focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
       >
         {submitting ? (
           <Loader2 size={16} className="animate-spin motion-reduce:animate-none" />
         ) : (
           <Sparkles size={16} />
         )}
-        {submitting ? "Uploading..." : "Transcribe"}
+        {submitting ? "Iniciando transcripción..." : "Transcribir"}
       </button>
     </div>
   );

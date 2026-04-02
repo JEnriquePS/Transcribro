@@ -111,8 +111,8 @@ export function TranscriptionConfig({
         </div>
         {availableModels.length > 0 &&
           !availableModelNames.has(config.model) && (
-            <p className="flex items-center gap-1.5 mt-1.5 text-xs text-warning">
-              <AlertTriangle size={14} />
+            <p role="alert" className="flex items-center gap-1.5 mt-1.5 text-xs text-warning">
+              <AlertTriangle size={14} aria-hidden="true" />
               Model not downloaded. Transcription will fail until it is
               available.
             </p>

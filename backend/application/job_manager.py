@@ -85,6 +85,10 @@ class JobManager:
         """List all jobs with pagination."""
         return self._repo.list(limit, offset)
 
+    def rename_job(self, job_id: str, display_name: str) -> JobMetadata:
+        """Update the display name for a job."""
+        return self._repo.update(job_id, display_name=display_name)
+
     def delete_job(self, job_id: str) -> None:
         """Delete a job and all its files."""
         self._repo.delete(job_id)

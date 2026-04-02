@@ -1,5 +1,6 @@
 import { NavLink, Route, Routes } from "react-router-dom";
 import { Upload, List, Mic, HardDrive } from "lucide-react";
+import { Toaster } from "sonner";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ThemeToggle } from "./components/ThemeToggle";
 import { UploadPage } from "./pages/UploadPage";
@@ -9,7 +10,7 @@ import { ModelsPage } from "./pages/ModelsPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 
 function navLinkClass({ isActive }: { isActive: boolean }): string {
-  return `flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
+  return `flex items-center gap-1.5 px-3 py-1.5 rounded text-sm transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
     isActive
       ? "bg-surface-elevated text-accent-text"
       : "text-text-secondary hover:text-text-primary"
@@ -51,6 +52,8 @@ export function App() {
           </div>
         </div>
       </header>
+
+      <Toaster position="top-center" richColors closeButton duration={Infinity} />
 
       <main id="main-content" className="flex-1 px-6 py-8">
         <ErrorBoundary>

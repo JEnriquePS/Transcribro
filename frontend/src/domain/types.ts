@@ -16,6 +16,7 @@ export interface TranscriptionConfig {
 export interface JobMetadata {
   readonly job_id: string;
   readonly original_filename: string;
+  readonly display_name: string | null;
   readonly status: JobStatus;
   readonly config: TranscriptionConfig;
   readonly error: string | null;

@@ -5,6 +5,7 @@ from typing import Annotated
 from fastapi import APIRouter, HTTPException
 from fastapi import Path as FastAPIPath
 from fastapi.responses import FileResponse
+from pydantic import BaseModel, Field
 
 from domain.errors import InvalidJobStateError, JobNotFoundError, UnsupportedFormatError
 from infrastructure.http.dependencies import get_job_manager
@@ -12,6 +13,10 @@ from infrastructure.http.dependencies import get_job_manager
 router = APIRouter(prefix="/api")
 
 ALLOWED_DOWNLOAD_FORMATS = {"txt", "json", "srt", "vtt"}
+
+
+class RenameJobRequest(BaseModel):
+    display_name: str = Field(min_length=1, max_length=255)
 
 JobId = Annotated[str, FastAPIPath(pattern=r"^[a-f0-9]{32}$")]
 
@@ -108,6 +113,17 @@ async def retry_job(job_id: JobId, resume: bool = False):
 
     await job_manager.enqueue_job(job_id)
     return metadata.model_dump()
+
+
+@router.patch("/jobs/{job_id}")
+def rename_job(job_id: JobId, body: RenameJobRequest):
+    """Update the display name of a job."""
+    job_manager = get_job_manager()
+    try:
+        updated = job_manager.rename_job(job_id, body.display_name.strip())
+    except JobNotFoundError:
+        raise HTTPException(status_code=404, detail=f"Job not found: {job_id}") from None
+    return updated.model_dump()
 
 
 @router.delete("/jobs/{job_id}")

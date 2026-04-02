@@ -64,6 +64,7 @@ export async function getJob(jobId: string): Promise<JobDetail> {
   const metadata: JobMetadata = {
     job_id: data.job_id,
     original_filename: data.original_filename,
+    display_name: data.display_name ?? null,
     status: data.status,
     config: data.config,
     error: data.error,
@@ -107,6 +108,11 @@ export async function previewFile(
 
 export async function deleteJob(jobId: string): Promise<void> {
   await api.delete(`/jobs/${jobId}`);
+}
+
+export async function renameJob(jobId: string, displayName: string): Promise<JobMetadata> {
+  const response = await api.patch<JobMetadata>(`/jobs/${jobId}`, { display_name: displayName });
+  return response.data;
 }
 
 export interface PartialTranscript {

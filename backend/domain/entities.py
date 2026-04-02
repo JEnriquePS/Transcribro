@@ -29,6 +29,7 @@ class JobMetadata(BaseModel):
 
     job_id: str
     original_filename: str
+    display_name: str | None = None
     status: JobStatus = JobStatus.PENDING
     config: TranscriptionConfig = Field(default_factory=TranscriptionConfig)
     error: str | None = None

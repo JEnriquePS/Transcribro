@@ -145,7 +145,7 @@ export function FileUploader({ onFilesSelected }: FileUploaderProps) {
       />
 
       {error && (
-        <p className="text-sm text-error bg-error-muted border border-error rounded px-3 py-2">
+        <p role="alert" className="text-sm text-error bg-error-muted border border-error rounded px-3 py-2">
           {error}
         </p>
       )}
@@ -169,7 +169,7 @@ export function FileUploader({ onFilesSelected }: FileUploaderProps) {
               <button
                 type="button"
                 onClick={() => removeFile(i)}
-                aria-label="Eliminar archivo"
+                aria-label={`Eliminar ${file.name}`}
                 className="text-text-secondary hover:text-error transition-colors ml-2 shrink-0 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
               >
                 <X size={16} />
