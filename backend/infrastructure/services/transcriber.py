@@ -32,10 +32,16 @@ class WhisperTranscriber:
         whisper_cli_path: Path,
         models_path: Path,
         no_speech_thold: float = 0.6,
+        entropy_thold: float = 2.4,
+        logprob_thold: float = -1.0,
+        max_context: int = 0,
     ) -> None:
         self._whisper_cli_path = whisper_cli_path
         self._models_path = models_path
         self._no_speech_thold = no_speech_thold
+        self._entropy_thold = entropy_thold
+        self._logprob_thold = logprob_thold
+        self._max_context = max_context
 
     async def transcribe(
         self,
@@ -69,6 +75,9 @@ class WhisperTranscriber:
             "--print-progress",
             "-t", str(threads),
             "--no-speech-thold", str(self._no_speech_thold),
+            "--entropy-thold", str(self._entropy_thold),
+            "--logprob-thold", str(self._logprob_thold),
+            "--max-context", str(self._max_context),
         ]
 
         if offset_ms > 0:
@@ -92,6 +101,7 @@ class WhisperTranscriber:
         async def _read_stdout() -> None:
             """Read stdout lines and parse transcript segments."""
             assert process.stdout is not None
+            last_text: str | None = None
             while True:
                 line = await process.stdout.readline()
                 if not line:
@@ -105,6 +115,9 @@ class WhisperTranscriber:
                     start = _parse_timestamp(g[0], g[1], g[2], g[3])
                     end = _parse_timestamp(g[4], g[5], g[6], g[7])
                     text = g[8].strip()
+                    if text == last_text:
+                        continue
+                    last_text = text
                     await on_segment(start, end, text)
 
         stdout_task = asyncio.create_task(_read_stdout())
@@ -174,6 +187,17 @@ def get_model_path(models_dir: Path, model_size: str) -> Path:
     return model_path
 
 
+def _deduplicate_consecutive(segments: list[TranscriptSegment]) -> list[TranscriptSegment]:
+    """Remove consecutive segments with identical text (whisper hallucination artifact)."""
+    if not segments:
+        return segments
+    result = [segments[0]]
+    for seg in segments[1:]:
+        if seg.text != result[-1].text:
+            result.append(seg)
+    return result
+
+
 def parse_whisper_json(json_path: Path, requested_language: str) -> TranscriptResult:
     """Parse whisper.cpp JSON output into a TranscriptResult.
 
@@ -206,6 +230,8 @@ def parse_whisper_json(json_path: Path, requested_language: str) -> TranscriptRe
         for entry in transcription
         if entry.get("offsets") and entry.get("text", "").strip()
     ]
+
+    segments = _deduplicate_consecutive(segments)
 
     full_text = " ".join(seg.text for seg in segments)
 

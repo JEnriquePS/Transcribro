@@ -13,6 +13,10 @@ class Settings(BaseSettings):
     default_language: str = "es"
     whisper_threads: int = 8
     whisper_no_speech_thold: float = 0.6
+    whisper_entropy_thold: float = 2.4
+    whisper_logprob_thold: float = -1.0
+    # 0 = disable context window between segments (prevents hallucination cascades)
+    whisper_max_context: int = 0
     max_file_size: int = 2 * 1024 * 1024 * 1024  # 2 GB
     allowed_extensions: frozenset[str] = frozenset(
         {".mp4", ".mkv", ".avi", ".mov", ".webm", ".mp3", ".wav", ".flac", ".ogg", ".m4a"}
