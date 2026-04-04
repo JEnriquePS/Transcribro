@@ -1,0 +1,92 @@
+#!/usr/bin/env bash
+# bundle-binaries.sh — Copy whisper-cli, ffmpeg, ffprobe to resources/bin/
+#
+# Usage:
+#   bash scripts/bundle-binaries.sh               # auto-detects arch
+#   bash scripts/bundle-binaries.sh arm64          # force arm64
+#   bash scripts/bundle-binaries.sh x64            # force x64
+#
+# Outputs:
+#   resources/bin/darwin-arm64/  whisper-cli ffmpeg ffprobe
+#   resources/bin/darwin-x64/   whisper-cli ffmpeg ffprobe    (if x64 requested)
+#
+# Dev symlinks (no arch dir):
+#   resources/bin/whisper-cli -> darwin-<native>/whisper-cli
+#   resources/bin/ffmpeg      -> darwin-<native>/ffmpeg
+#   resources/bin/ffprobe     -> darwin-<native>/ffprobe
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+RESOURCES_BIN="$PROJECT_ROOT/resources/bin"
+
+# ── Resolve architecture ──────────────────────────────────────────────────────
+if [[ ${1:-} == "arm64" ]]; then
+  ARCH="arm64"
+elif [[ ${1:-} == "x64" ]]; then
+  ARCH="x64"
+else
+  RAW_ARCH=$(uname -m)
+  if [[ "$RAW_ARCH" == "arm64" ]]; then
+    ARCH="arm64"
+  else
+    ARCH="x64"
+  fi
+fi
+
+TARGET_DIR="$RESOURCES_BIN/darwin-$ARCH"
+mkdir -p "$TARGET_DIR"
+
+echo "→ Bundling binaries for darwin-$ARCH into $TARGET_DIR"
+
+# ── whisper-cli ───────────────────────────────────────────────────────────────
+WHISPER_CLI="$PROJECT_ROOT/whisper.cpp/build/bin/whisper-cli"
+if [[ ! -f "$WHISPER_CLI" ]]; then
+  echo "✗ whisper-cli not found at $WHISPER_CLI"
+  echo "  Run: cd whisper.cpp && cmake -B build -DWHISPER_METAL=ON && cmake --build build -j"
+  exit 1
+fi
+
+cp "$WHISPER_CLI" "$TARGET_DIR/whisper-cli"
+chmod +x "$TARGET_DIR/whisper-cli"
+echo "✓ whisper-cli copied"
+
+# ── ffmpeg ────────────────────────────────────────────────────────────────────
+FFMPEG_PATH=$(which ffmpeg 2>/dev/null || true)
+if [[ -z "$FFMPEG_PATH" ]]; then
+  echo "✗ ffmpeg not found in PATH. Install with: brew install ffmpeg"
+  exit 1
+fi
+
+# Resolve symlinks to get the real binary
+FFMPEG_REAL=$(readlink -f "$FFMPEG_PATH" 2>/dev/null || realpath "$FFMPEG_PATH")
+cp "$FFMPEG_REAL" "$TARGET_DIR/ffmpeg"
+chmod +x "$TARGET_DIR/ffmpeg"
+echo "✓ ffmpeg copied from $FFMPEG_REAL"
+
+# ── ffprobe ───────────────────────────────────────────────────────────────────
+FFPROBE_PATH=$(which ffprobe 2>/dev/null || true)
+if [[ -z "$FFPROBE_PATH" ]]; then
+  echo "✗ ffprobe not found in PATH. Install with: brew install ffmpeg"
+  exit 1
+fi
+
+FFPROBE_REAL=$(readlink -f "$FFPROBE_PATH" 2>/dev/null || realpath "$FFPROBE_PATH")
+cp "$FFPROBE_REAL" "$TARGET_DIR/ffprobe"
+chmod +x "$TARGET_DIR/ffprobe"
+echo "✓ ffprobe copied from $FFPROBE_REAL"
+
+# ── Dev symlinks (no arch subdir — used by config.ts in dev mode) ─────────────
+echo "→ Creating dev symlinks in resources/bin/"
+ln -sf "darwin-$ARCH/whisper-cli" "$RESOURCES_BIN/whisper-cli"
+ln -sf "darwin-$ARCH/ffmpeg"      "$RESOURCES_BIN/ffmpeg"
+ln -sf "darwin-$ARCH/ffprobe"     "$RESOURCES_BIN/ffprobe"
+echo "✓ Symlinks created"
+
+# ── Binary info ───────────────────────────────────────────────────────────────
+echo ""
+echo "Binary sizes:"
+du -sh "$TARGET_DIR"/*
+echo ""
+echo "Done. resources/bin/darwin-$ARCH/ is ready."
