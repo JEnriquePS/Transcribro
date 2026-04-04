@@ -1,0 +1,13 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "skipLibCheck": true
+  },
+  "references": [
+    { "path": "src/shared" },
+    { "path": "src/main" },
+    { "path": "src/renderer" },
+    { "path": "src/preload" }
+  ],
+  "files": []
+}
