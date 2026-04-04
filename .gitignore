@@ -1,13 +1,10 @@
 # Dependencies
 node_modules/
-.venv/
-__pycache__/
-*.pyc
-*.pyo
 
-# Caches
-.mypy_cache/
-.pytest_cache/
+# Build outputs
+dist/
+dist-electron/
+dist-app/
 
 # Data (keep folders, ignore contents)
 data/models/*
@@ -28,6 +25,9 @@ whisper.cpp/
 # IDE
 .vscode/
 .idea/
+
+# macOS
+.DS_Store
 .claude/
 *.swp
 *.swo
@@ -40,3 +40,7 @@ Thumbs.db
 dist/
 build/
 *.egg-info/
+
+# Bundled binaries (run: npm run bundle)
+resources/bin/
+resources/icon.icns
