@@ -1,0 +1,19 @@
+{
+  "compilerOptions": {
+    "composite": true,
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "declaration": true,
+    "declarationMap": true,
+    "outDir": "../../dist/main",
+    "rootDir": ".",
+    "skipLibCheck": true,
+    "types": ["node"]
+  },
+  "references": [
+    { "path": "../shared" }
+  ],
+  "include": ["./**/*.ts"]
+}

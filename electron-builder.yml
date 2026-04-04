@@ -1,0 +1,42 @@
+appId: io.transcribro.app
+productName: Transcribro
+copyright: "Copyright © 2026 Transcribro"
+
+directories:
+  buildResources: resources
+  output: dist-app
+
+files:
+  - "dist/**/*"
+  - "dist-electron/**/*"
+  - "node_modules/better-sqlite3/**/*"
+  - "!**/*.map"
+  - "!**/*.ts"
+
+asar:
+  unpackDir: "node_modules/better-sqlite3"
+
+mac:
+  target:
+    - target: dmg
+      arch:
+        - arm64
+        - x64
+  icon: resources/icon.icns
+  category: public.app-category.productivity
+  hardenedRuntime: true
+  gatekeeperAssess: false
+  entitlements: resources/entitlements.mac.plist
+  entitlementsInherit: resources/entitlements.mac.plist
+  extraResources:
+    - from: "resources/bin/darwin-${arch}"
+      to: "bin"
+      filter:
+        - "**"
+
+dmg:
+  title: "Transcribro ${version}"
+  artifactName: "Transcribro-${version}-${arch}.dmg"
+  window:
+    width: 540
+    height: 380

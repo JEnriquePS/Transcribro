@@ -1,0 +1,77 @@
+/**
+ * Zod schemas for all IPC inputs.
+ * These are the single source of truth for runtime validation at the IPC boundary.
+ */
+import { z } from 'zod'
+import { JOB_ID_REGEX, DOWNLOAD_FORMATS, DEFAULT_MODEL, DEFAULT_LANGUAGE } from './constants'
+
+// ── Primitives ────────────────────────────────────────────────────────────────
+
+export const jobIdSchema = z
+  .string()
+  .regex(JOB_ID_REGEX, 'Job ID must be a 32-char hex string')
+
+// ── Input schemas ─────────────────────────────────────────────────────────────
+
+export const transcriptionConfigSchema = z.object({
+  model: z.string().min(1).default(DEFAULT_MODEL),
+  language: z.string().min(1).default(DEFAULT_LANGUAGE),
+  threads: z.number().int().positive().optional(),
+})
+
+export const createJobInputSchema = z.object({
+  /** Absolute path to the media file on disk (selected via native dialog). */
+  filePath: z.string().min(1),
+  config: transcriptionConfigSchema,
+})
+
+export const createBatchInputSchema = z.object({
+  filePaths: z.array(z.string().min(1)).min(1),
+  config: transcriptionConfigSchema,
+})
+
+export const renameJobInputSchema = z.object({
+  jobId: jobIdSchema,
+  displayName: z.string().min(1).max(255),
+})
+
+export const downloadInputSchema = z.object({
+  jobId: jobIdSchema,
+  format: z.enum(DOWNLOAD_FORMATS),
+})
+
+export const retryJobInputSchema = z.object({
+  jobId: jobIdSchema,
+  resume: z.boolean().default(false),
+})
+
+export const paginationInputSchema = z.object({
+  limit: z.number().int().min(1).max(200).default(50),
+  offset: z.number().int().min(0).default(0),
+})
+
+export const jobGetInputSchema = z.object({
+  jobId: jobIdSchema,
+})
+
+export const jobDeleteInputSchema = z.object({
+  jobId: jobIdSchema,
+})
+
+export const modelSetDefaultInputSchema = z.object({
+  name: z.string().min(1),
+})
+
+export const modelNameInputSchema = z.object({
+  name: z.string().min(1),
+})
+
+// ── Inferred types (used in IpcMap) ───────────────────────────────────────────
+
+export type TranscriptionConfigInput = z.infer<typeof transcriptionConfigSchema>
+export type CreateJobInput = z.infer<typeof createJobInputSchema>
+export type CreateBatchInput = z.infer<typeof createBatchInputSchema>
+export type RenameJobInput = z.infer<typeof renameJobInputSchema>
+export type DownloadInput = z.infer<typeof downloadInputSchema>
+export type RetryJobInput = z.infer<typeof retryJobInputSchema>
+export type PaginationInput = z.infer<typeof paginationInputSchema>
