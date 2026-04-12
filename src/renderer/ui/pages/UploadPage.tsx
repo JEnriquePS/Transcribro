@@ -66,10 +66,10 @@ export function UploadPage() {
       <div>
         <h1 className="flex items-center gap-2 text-xl font-semibold text-text-primary">
           <Upload size={20} className="text-accent-text" />
-          Upload Video
+          Upload Media
         </h1>
         <p className="text-sm text-text-secondary mt-1">
-          Select video files to transcribe
+          Select video or audio files to transcribe
         </p>
       </div>
 

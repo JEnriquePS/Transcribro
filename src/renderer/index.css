@@ -130,6 +130,39 @@
   --status-formatting-muted: rgba(129, 140, 248, 0.2);
 }
 
+/* Window drag regions (Electron) */
+@utility drag {
+  -webkit-app-region: drag;
+  user-select: none;
+}
+
+@utility no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-default);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* Base typography — Plus Jakarta Sans */
 *, *::before, *::after {
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;

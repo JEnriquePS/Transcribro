@@ -1,9 +1,13 @@
 import { useCallback, useRef, useState } from 'react'
-import { Upload, X, FileVideo } from 'lucide-react'
+import { Upload, X, File } from 'lucide-react'
 import { ipc } from '../../infrastructure/ipc-client'
 
 function fileBasename(filePath: string): string {
   return filePath.replace(/.*[\\/]/, '')
+}
+
+function dedupe(paths: string[]): string[] {
+  return [...new Set(paths)]
 }
 
 interface FileUploaderProps {
@@ -25,7 +29,10 @@ export function FileUploader({ onFilesSelected }: FileUploaderProps) {
 
   const handleSelectClick = async () => {
     const paths = await ipc.selectFiles()
-    if (paths.length > 0) setPaths(paths)
+    if (paths.length > 0) {
+      const next = dedupe([...selectedPaths, ...paths])
+      setPaths(next)
+    }
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -43,9 +50,12 @@ export function FileUploader({ onFilesSelected }: FileUploaderProps) {
     e.preventDefault()
     setIsDragging(false)
     const dropped = Array.from(e.dataTransfer.files)
-      .map((f) => (f as File & { path?: string }).path ?? '')
+      .map((f) => window.electronAPI.getFilePath(f))
       .filter(Boolean)
-    if (dropped.length > 0) setPaths(dropped)
+    if (dropped.length > 0) {
+      const next = dedupe([...selectedPaths, ...dropped])
+      setPaths(next)
+    }
   }
 
   const removeFile = (index: number) => {
@@ -69,7 +79,7 @@ export function FileUploader({ onFilesSelected }: FileUploaderProps) {
         onClick={handleSelectClick}
         role="button"
         tabIndex={0}
-        aria-label="Select video files"
+        aria-label="Select media files"
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
             e.preventDefault()
@@ -94,7 +104,7 @@ export function FileUploader({ onFilesSelected }: FileUploaderProps) {
               key={filePath}
               className="flex items-center gap-2 bg-surface-elevated border border-border-default rounded px-3 py-2 text-sm"
             >
-              <FileVideo size={14} className="text-accent-text shrink-0" />
+              <File size={14} className="text-accent-text shrink-0" />
               <span className="flex-1 truncate text-text-primary">
                 {fileBasename(filePath)}
               </span>

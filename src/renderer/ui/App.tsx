@@ -1,8 +1,9 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
-import { Upload, List, Mic, HardDrive } from 'lucide-react'
+import { Upload, List, HardDrive } from 'lucide-react'
 import { Toaster } from 'sonner'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ThemeToggle } from './components/ThemeToggle'
+import { TranscribroLogo } from './components/TranscribroLogo'
 import { UploadPage } from './pages/UploadPage'
 import { JobsPage } from './pages/JobsPage'
 import { JobDetailPage } from './pages/JobDetailPage'
@@ -27,16 +28,16 @@ export function App() {
         Saltar al contenido principal
       </a>
 
-      <header className="border-b border-border-subtle px-6 py-3">
+      <header className="drag border-b border-border-subtle pl-20 pr-6 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <NavLink
             to="/"
-            className="flex items-center gap-2 text-lg font-bold text-accent-text tracking-tight focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
+            className="no-drag flex items-center gap-2 text-lg font-bold text-accent-text tracking-tight focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
           >
-            <Mic size={20} />
+            <TranscribroLogo size={20} />
             Transcribro
           </NavLink>
-          <div className="flex items-center gap-2">
+          <div className="no-drag flex items-center gap-2">
             <nav className="flex gap-1" aria-label="Navegación principal">
               <NavLink to="/" end className={navLinkClass}>
                 <Upload size={14} />
@@ -44,7 +45,7 @@ export function App() {
               </NavLink>
               <NavLink to="/jobs" className={navLinkClass}>
                 <List size={14} />
-                Jobs
+                Transcriptions
               </NavLink>
               <NavLink to="/models" className={navLinkClass}>
                 <HardDrive size={14} />
