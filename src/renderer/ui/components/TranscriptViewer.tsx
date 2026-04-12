@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { List, Copy, Check, FolderOpen, Loader2, FileText, Braces, Captions, Globe } from 'lucide-react'
+import { List, Copy, Check, Loader2, FileText, Braces, Captions, Globe, Download } from 'lucide-react'
 import { ipc } from '../../infrastructure/ipc-client'
 import { toast } from 'sonner'
 import type { TranscriptResult } from '../../../shared/types'
@@ -39,7 +39,7 @@ export function TranscriptViewer({ jobId, result }: TranscriptViewerProps) {
   const [previews, setPreviews] = useState<Partial<Record<Tab, string>>>({})
   const [loadingPreview, setLoadingPreview] = useState(false)
   const [copied, setCopied] = useState(false)
-  const [revealing, setRevealing] = useState(false)
+  const [downloading, setDownloading] = useState(false)
 
   const fetchPreview = useCallback(
     async (format: Tab) => {
@@ -74,16 +74,17 @@ export function TranscriptViewer({ jobId, result }: TranscriptViewerProps) {
     setTimeout(() => setCopied(false), 2000)
   }
 
-  const handleReveal = async () => {
+  const handleDownload = async () => {
     const format = tab === 'segments' ? 'txt' : tab
-    setRevealing(true)
+    setDownloading(true)
     try {
-      const { filePath } = await ipc.downloadFile(jobId, format)
-      await ipc.revealFile(filePath)
+      const { filePath, fileName } = await ipc.downloadFile(jobId, format)
+      const { saved } = await ipc.saveFile(filePath, fileName)
+      if (saved) toast.success(`${fileName} guardado correctamente.`)
     } catch {
-      toast.error('No se pudo abrir el archivo')
+      toast.error('No se pudo descargar el archivo')
     } finally {
-      setRevealing(false)
+      setDownloading(false)
     }
   }
 
@@ -123,15 +124,15 @@ export function TranscriptViewer({ jobId, result }: TranscriptViewerProps) {
           </button>
           <button
             type="button"
-            onClick={handleReveal}
-            disabled={revealing}
-            aria-label="Reveal in Finder"
+            onClick={handleDownload}
+            disabled={downloading}
+            aria-label="Descargar archivo"
             className="flex items-center gap-1 text-xs text-text-secondary hover:text-text-primary transition-colors disabled:opacity-30 disabled:cursor-not-allowed focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
           >
-            {revealing ? (
+            {downloading ? (
               <Loader2 size={14} className="animate-spin motion-reduce:animate-none" />
             ) : (
-              <FolderOpen size={14} />
+              <Download size={14} />
             )}
           </button>
         </div>
