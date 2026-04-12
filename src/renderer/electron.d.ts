@@ -16,6 +16,7 @@ declare global {
        * @returns cleanup function — call in useEffect cleanup
        */
       on: (channel: string, listener: (...args: unknown[]) => void) => () => void
+      getFilePath: (file: File) => string
     }
   }
 }

@@ -105,7 +105,7 @@ interface UseJobsPollingResult {
   readonly error: string | null
 }
 
-export function useJobsPolling(enabled: boolean): UseJobsPollingResult {
+export function useJobsPolling(enabled: boolean, folderId?: string | null): UseJobsPollingResult {
   const [jobs, setJobs] = useState<readonly JobMetadata[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -114,7 +114,7 @@ export function useJobsPolling(enabled: boolean): UseJobsPollingResult {
   const fetchJobs = useCallback(async () => {
     if (!enabled) return
     try {
-      const data = await ipc.listJobs()
+      const data = await ipc.listJobs(100, 0, folderId)
       if (!mountedRef.current) return
       setJobs(data.jobs)
       setIsLoading(false)
@@ -123,7 +123,7 @@ export function useJobsPolling(enabled: boolean): UseJobsPollingResult {
       setError(err instanceof Error ? err.message : 'Failed to load jobs')
       setIsLoading(false)
     }
-  }, [enabled])
+  }, [enabled, folderId])
 
   useEffect(() => {
     if (!enabled) return
@@ -154,7 +154,7 @@ export function useJobsPolling(enabled: boolean): UseJobsPollingResult {
       cleanupCompleted()
       cleanupFailed()
     }
-  }, [enabled, fetchJobs])
+  }, [enabled, folderId, fetchJobs])
 
   return { jobs, isLoading, error }
 }
