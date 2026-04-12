@@ -13,8 +13,9 @@ files:
   - "!**/*.map"
   - "!**/*.ts"
 
-asar:
-  unpackDir: "node_modules/better-sqlite3"
+asar: true
+asarUnpack:
+  - "node_modules/better-sqlite3/**/*"
 
 mac:
   target:

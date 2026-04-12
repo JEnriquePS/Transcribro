@@ -22,17 +22,22 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 RESOURCES_BIN="$PROJECT_ROOT/resources/bin"
 
 # ── Resolve architecture ──────────────────────────────────────────────────────
+NATIVE_ARCH=$(uname -m)
+[[ "$NATIVE_ARCH" == "arm64" ]] && NATIVE_ARCH="arm64" || NATIVE_ARCH="x64"
+
 if [[ ${1:-} == "arm64" ]]; then
   ARCH="arm64"
 elif [[ ${1:-} == "x64" ]]; then
   ARCH="x64"
 else
-  RAW_ARCH=$(uname -m)
-  if [[ "$RAW_ARCH" == "arm64" ]]; then
-    ARCH="arm64"
-  else
-    ARCH="x64"
-  fi
+  ARCH="$NATIVE_ARCH"
+fi
+
+if [[ "$ARCH" != "$NATIVE_ARCH" ]]; then
+  echo "⚠ Warning: bundling for $ARCH but running on $NATIVE_ARCH."
+  echo "  The copied binaries will be $NATIVE_ARCH — they will not run on $ARCH."
+  echo "  For a true cross-arch build, supply $ARCH binaries manually."
+  echo ""
 fi
 
 TARGET_DIR="$RESOURCES_BIN/darwin-$ARCH"
@@ -53,29 +58,26 @@ chmod +x "$TARGET_DIR/whisper-cli"
 echo "✓ whisper-cli copied"
 
 # ── ffmpeg ────────────────────────────────────────────────────────────────────
-FFMPEG_PATH=$(which ffmpeg 2>/dev/null || true)
+FFMPEG_PATH=$(command -v ffmpeg 2>/dev/null || true)
 if [[ -z "$FFMPEG_PATH" ]]; then
   echo "✗ ffmpeg not found in PATH. Install with: brew install ffmpeg"
   exit 1
 fi
 
-# Resolve symlinks to get the real binary
-FFMPEG_REAL=$(readlink -f "$FFMPEG_PATH" 2>/dev/null || realpath "$FFMPEG_PATH")
-cp "$FFMPEG_REAL" "$TARGET_DIR/ffmpeg"
+cp "$(realpath "$FFMPEG_PATH")" "$TARGET_DIR/ffmpeg"
 chmod +x "$TARGET_DIR/ffmpeg"
-echo "✓ ffmpeg copied from $FFMPEG_REAL"
+echo "✓ ffmpeg copied from $(realpath "$FFMPEG_PATH")"
 
 # ── ffprobe ───────────────────────────────────────────────────────────────────
-FFPROBE_PATH=$(which ffprobe 2>/dev/null || true)
+FFPROBE_PATH=$(command -v ffprobe 2>/dev/null || true)
 if [[ -z "$FFPROBE_PATH" ]]; then
   echo "✗ ffprobe not found in PATH. Install with: brew install ffmpeg"
   exit 1
 fi
 
-FFPROBE_REAL=$(readlink -f "$FFPROBE_PATH" 2>/dev/null || realpath "$FFPROBE_PATH")
-cp "$FFPROBE_REAL" "$TARGET_DIR/ffprobe"
+cp "$(realpath "$FFPROBE_PATH")" "$TARGET_DIR/ffprobe"
 chmod +x "$TARGET_DIR/ffprobe"
-echo "✓ ffprobe copied from $FFPROBE_REAL"
+echo "✓ ffprobe copied from $(realpath "$FFPROBE_PATH")"
 
 # ── Dev symlinks (no arch subdir — used by config.ts in dev mode) ─────────────
 echo "→ Creating dev symlinks in resources/bin/"
