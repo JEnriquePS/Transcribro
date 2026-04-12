@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { eq, desc, count } from 'drizzle-orm'
+import { eq, desc, count, isNull, inArray } from 'drizzle-orm'
 import { jobs, transcriptSegments, transcriptResults } from '../db/schema'
 import type { Db } from '../db/client'
 import type { JobMetadata, TranscriptSegment, TranscriptResult } from '../../../shared/types'
@@ -38,6 +38,7 @@ function rowToMetadata(row: JobRow): JobMetadata {
     startedAt:             row.startedAt ?? null,
     completedAt:           row.completedAt ?? null,
     durationSeconds:       row.durationSeconds ?? null,
+    folderId:              row.folderId ?? null,
   }
 }
 
@@ -82,6 +83,7 @@ export class DrizzleJobRepository {
         startedAt:             job.startedAt ?? null,
         completedAt:           job.completedAt ?? null,
         durationSeconds:       job.durationSeconds ?? null,
+        folderId:              job.folderId ?? null,
       })
       .onConflictDoUpdate({
         target: jobs.id,
@@ -100,6 +102,7 @@ export class DrizzleJobRepository {
           startedAt:             job.startedAt ?? null,
           completedAt:           job.completedAt ?? null,
           durationSeconds:       job.durationSeconds ?? null,
+          folderId:              job.folderId ?? null,
         },
       })
       .run()
@@ -114,21 +117,40 @@ export class DrizzleJobRepository {
     return row ? rowToMetadata(row) : null
   }
 
-  list(limit = 50, offset = 0): { jobs: JobMetadata[]; total: number } {
-    const rows = this.db
-      .select()
-      .from(jobs)
+  /**
+   * List jobs with optional folder filter.
+   * - folderFilter === undefined     → all jobs (no WHERE clause)
+   * - folderFilter === null          → uncategorized (WHERE folder_id IS NULL)
+   * - folderFilter === string[]      → jobs in any of those folder IDs (WHERE folder_id IN (...))
+   *                                    Pass [folderId, ...descendants] for recursive folder selection.
+   */
+  list(limit = 50, offset = 0, folderFilter?: null | readonly string[]): { jobs: JobMetadata[]; total: number } {
+    const whereClause =
+      folderFilter === undefined
+        ? undefined
+        : folderFilter === null
+          ? isNull(jobs.folderId)
+          : inArray(jobs.folderId, folderFilter as string[])
+
+    const baseQuery = this.db.select().from(jobs)
+    const countQuery = this.db.select({ value: count() }).from(jobs)
+
+    const rows = (whereClause ? baseQuery.where(whereClause) : baseQuery)
       .orderBy(desc(jobs.createdAt))
       .limit(limit)
       .offset(offset)
       .all()
 
-    const [{ value: total }] = this.db
-      .select({ value: count() })
-      .from(jobs)
-      .all()
+    const [{ value: total }] = (whereClause ? countQuery.where(whereClause) : countQuery).all()
 
     return { jobs: rows.map(rowToMetadata), total }
+  }
+
+  moveToFolder(jobId: string, folderId: string | null): JobMetadata {
+    const existing = this.get(jobId)
+    if (!existing) throw new JobNotFoundError(jobId)
+    this.db.update(jobs).set({ folderId }).where(eq(jobs.id, jobId)).run()
+    return { ...existing, folderId }
   }
 
   update(jobId: string, fields: Partial<Omit<JobMetadata, 'id'>>): JobMetadata {

@@ -106,6 +106,7 @@ function mapLegacyMetadata(raw: LegacyMetadata) {
     startedAt:             raw.started_at      ?? null,
     completedAt:           raw.completed_at    ?? null,
     durationSeconds:       raw.duration_seconds ?? null,
+    folderId:              null,
   } as const
 }
 
