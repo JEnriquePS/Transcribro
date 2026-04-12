@@ -31,6 +31,7 @@ export class CreateJobUseCase {
       startedAt: null,
       completedAt: null,
       durationSeconds: null,
+      folderId: null,
     }
 
     this.repo.save(metadata)

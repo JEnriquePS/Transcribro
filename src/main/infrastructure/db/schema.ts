@@ -1,4 +1,12 @@
 import { integer, real, sqliteTable, text } from 'drizzle-orm/sqlite-core'
+import type { AnySQLiteColumn } from 'drizzle-orm/sqlite-core'
+
+export const folders = sqliteTable('folders', {
+  id:        text('id').primaryKey(),
+  name:      text('name').notNull(),
+  parentId:  text('parent_id').references((): AnySQLiteColumn => folders.id, { onDelete: 'cascade' }),
+  createdAt: text('created_at'),
+})
 
 export const jobs = sqliteTable('jobs', {
   id:                    text('id').primaryKey(),
@@ -18,6 +26,7 @@ export const jobs = sqliteTable('jobs', {
   startedAt:             text('started_at'),
   completedAt:           text('completed_at'),
   durationSeconds:       real('duration_seconds'),
+  folderId:              text('folder_id').references(() => folders.id, { onDelete: 'set null' }),
 })
 
 export const transcriptSegments = sqliteTable('transcript_segments', {
