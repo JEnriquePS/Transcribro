@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
-import { FileVideo, AlertCircle, Trash2, Loader2, Pencil, Check, X } from 'lucide-react'
-import { JobStatus, type JobMetadata } from '../../../shared/types'
+import { File, AlertCircle, Trash2, Loader2, Pencil, Check, X, FolderInput } from 'lucide-react'
+import { JobStatus, type JobMetadata, type Folder } from '../../../shared/types'
 import { ProgressBar } from './ProgressBar'
 
 const STATUS_BADGE: Record<JobStatus, { label: string; className: string }> = {
@@ -44,16 +44,37 @@ interface JobCardProps {
   readonly onDelete?: (e: React.MouseEvent) => void
   readonly isDeleting?: boolean
   readonly onRename?: (jobId: string, newName: string) => Promise<void>
+  readonly folders?: readonly Folder[]
+  readonly onMoveToFolder?: (jobId: string, folderId: string | null) => Promise<void>
 }
 
-export function JobCard({ job, onClick, onDelete, isDeleting, onRename }: JobCardProps) {
+export function JobCard({ job, onClick, onDelete, isDeleting, onRename, folders, onMoveToFolder }: JobCardProps) {
   const badge = STATUS_BADGE[job.status]
   const displayName = job.displayName ?? job.originalFilename
 
   const [isEditing, setIsEditing] = useState(false)
   const [editValue, setEditValue] = useState(displayName)
   const [isSaving, setIsSaving] = useState(false)
+  const [showFolderMenu, setShowFolderMenu] = useState(false)
+  const folderMenuRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    if (!showFolderMenu) return
+    const handleClickOutside = (e: MouseEvent) => {
+      if (folderMenuRef.current && !folderMenuRef.current.contains(e.target as Node)) {
+        setShowFolderMenu(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showFolderMenu])
+
+  const handleMoveToFolder = async (e: React.MouseEvent, folderId: string | null) => {
+    e.stopPropagation()
+    setShowFolderMenu(false)
+    await onMoveToFolder?.(job.id, folderId)
+  }
 
   useEffect(() => {
     if (!isEditing) setEditValue(displayName)
@@ -102,7 +123,7 @@ export function JobCard({ job, onClick, onDelete, isDeleting, onRename }: JobCar
       {/* Top row: filename / input + badge + actions */}
       <div className="flex items-start justify-between gap-3 mb-3">
         <div className="flex items-center gap-2 min-w-0 flex-1">
-          <FileVideo size={16} className="text-accent-text shrink-0" />
+          <File size={16} className="text-accent-text shrink-0" />
           {isEditing ? (
             <input
               ref={inputRef}
@@ -168,6 +189,48 @@ export function JobCard({ job, onClick, onDelete, isDeleting, onRename }: JobCar
                   <Pencil size={14} />
                 </button>
               )}
+              {onMoveToFolder && folders && (
+                <div ref={folderMenuRef} className="relative">
+                  <button
+                    type="button"
+                    onClick={(e) => { e.stopPropagation(); setShowFolderMenu((v) => !v) }}
+                    aria-label={`Mover trabajo ${displayName} a carpeta`}
+                    aria-expanded={showFolderMenu}
+                    className="opacity-0 group-hover:opacity-100 rounded p-1 text-text-secondary hover:text-accent-text transition-all focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface focus-visible:opacity-100"
+                  >
+                    <FolderInput size={14} />
+                  </button>
+                  {showFolderMenu && (
+                    <div
+                      role="menu"
+                      className="absolute right-0 top-full mt-1 z-40 min-w-[140px] bg-surface border border-border-default rounded-md shadow-lg py-1 text-xs"
+                    >
+                      <button
+                        type="button"
+                        role="menuitem"
+                        onClick={(e) => handleMoveToFolder(e, null)}
+                        className={`w-full text-left px-3 py-1.5 hover:bg-surface-elevated transition-colors ${job.folderId === null ? 'text-accent-text font-medium' : 'text-text-secondary'}`}
+                      >
+                        Sin carpeta
+                      </button>
+                      {folders.length > 0 && (
+                        <div className="border-t border-border-default my-1" />
+                      )}
+                      {folders.map((folder) => (
+                        <button
+                          key={folder.id}
+                          type="button"
+                          role="menuitem"
+                          onClick={(e) => handleMoveToFolder(e, folder.id)}
+                          className={`w-full text-left px-3 py-1.5 hover:bg-surface-elevated transition-colors truncate ${job.folderId === folder.id ? 'text-accent-text font-medium' : 'text-text-primary'}`}
+                        >
+                          {folder.name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               {onDelete && (
                 <button
                   type="button"
@@ -199,9 +262,16 @@ export function JobCard({ job, onClick, onDelete, isDeleting, onRename }: JobCar
         </div>
       )}
 
-      <p aria-hidden="true" className="text-[10px] text-text-muted mt-2 font-mono">
-        {job.id}
-      </p>
+      <div className="flex items-center justify-between mt-2">
+        {job.createdAt && (
+          <p className="text-[10px] text-text-muted">
+            {new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(new Date(job.createdAt))}
+          </p>
+        )}
+        <p aria-hidden="true" className="text-[10px] text-text-muted font-mono ml-auto">
+          {job.id}
+        </p>
+      </div>
     </div>
   )
 }

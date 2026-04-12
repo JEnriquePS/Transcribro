@@ -41,8 +41,12 @@ export const ipc = {
   createBatch: (filePaths: string[], config: IpcMap[typeof IPC.JOBS_CREATE_BATCH]['input']['config']) =>
     invoke(IPC.JOBS_CREATE_BATCH, { filePaths, config }),
 
-  listJobs: (limit = 100, offset = 0) =>
-    invoke(IPC.JOBS_LIST, { limit, offset }),
+  listJobs: (limit = 100, offset = 0, folderId?: string | null) =>
+    invoke(IPC.JOBS_LIST, {
+      limit,
+      offset,
+      ...(folderId === undefined ? {} : { folderId: folderId === null ? '__uncategorized__' : folderId }),
+    }),
 
   getJob: (jobId: string) =>
     invoke(IPC.JOBS_GET, { jobId }),
@@ -64,6 +68,22 @@ export const ipc = {
 
   getPartialTranscript: (jobId: string) =>
     invoke(IPC.JOBS_PARTIAL_TRANSCRIPT, { jobId }),
+
+  moveJobToFolder: (jobId: string, folderId: string | null) =>
+    invoke(IPC.JOBS_MOVE_TO_FOLDER, { jobId, folderId }),
+
+  // Folders
+  listFolders: () =>
+    invoke(IPC.FOLDERS_LIST),
+
+  createFolder: (name: string, parentId?: string | null) =>
+    invoke(IPC.FOLDERS_CREATE, { name, ...(parentId !== undefined ? { parentId } : {}) }),
+
+  renameFolder: (folderId: string, name: string) =>
+    invoke(IPC.FOLDERS_RENAME, { folderId, name }),
+
+  deleteFolder: (folderId: string) =>
+    invoke(IPC.FOLDERS_DELETE, { folderId }),
 
   // Models
   listModels: () =>
@@ -90,6 +110,9 @@ export const ipc = {
 
   revealFile: (filePath: string) =>
     invoke(IPC.APP_REVEAL_FILE, { filePath }),
+
+  saveFile: (sourcePath: string, defaultName: string) =>
+    invoke(IPC.APP_SAVE_FILE, { sourcePath, defaultName }),
 
   // Push event subscriptions
   onJobProgress: (listener: (e: IpcMap[typeof IPC.JOB_PROGRESS]['output']) => void) =>
