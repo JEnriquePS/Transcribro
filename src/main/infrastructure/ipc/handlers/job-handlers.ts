@@ -5,24 +5,27 @@ import { IPC } from '../../../../shared/ipc-channels'
 import {
   createJobInputSchema,
   createBatchInputSchema,
-  paginationInputSchema,
+  listJobsInputSchema,
   jobGetInputSchema,
   jobDeleteInputSchema,
   renameJobInputSchema,
   retryJobInputSchema,
   downloadInputSchema,
+  moveJobToFolderInputSchema,
   jobIdSchema,
 } from '../../../../shared/schemas'
 import { JobStatus } from '../../../../shared/types'
 import { JobNotFoundError } from '../../../domain/errors'
 import { handleIpc } from '../ipc-wrapper'
 import type { DrizzleJobRepository } from '../../repositories/drizzle-job-repository'
+import type { DrizzleFolderRepository } from '../../repositories/drizzle-folder-repository'
 import type { CreateJobUseCase } from '../../../application/use-cases/create-job'
 import type { RetryJobUseCase } from '../../../application/use-cases/retry-job'
 import type { JobQueue } from '../../../application/job-queue'
 
 export function registerJobHandlers(
   repo: DrizzleJobRepository,
+  folderRepo: DrizzleFolderRepository,
   createJobUc: CreateJobUseCase,
   retryJobUc: RetryJobUseCase,
   queue: JobQueue,
@@ -43,9 +46,20 @@ export function registerJobHandlers(
     })
   })
 
-  // List jobs with pagination
-  handleIpc(IPC.JOBS_LIST, paginationInputSchema, (input) => {
-    return repo.list(input.limit, input.offset)
+  // List jobs with optional folder filter (recursive: includes descendants)
+  handleIpc(IPC.JOBS_LIST, listJobsInputSchema, (input) => {
+    if (input.folderId === '__uncategorized__') {
+      return repo.list(input.limit, input.offset, null)
+    } else if (input.folderId) {
+      const ids = folderRepo.getAllDescendantIds(input.folderId)
+      return repo.list(input.limit, input.offset, ids)
+    }
+    return repo.list(input.limit, input.offset, undefined)
+  })
+
+  // Move job to a folder (or remove from folder when folderId is null)
+  handleIpc(IPC.JOBS_MOVE_TO_FOLDER, moveJobToFolderInputSchema, (input) => {
+    return repo.moveToFolder(input.jobId, input.folderId)
   })
 
   // Get single job + transcript result (if completed)
@@ -86,8 +100,8 @@ export function registerJobHandlers(
       throw new Error(`Output file not ready for job ${input.jobId} (format: ${input.format})`)
     }
     const metadata = repo.get(input.jobId)
-    const stem = metadata ? path.parse(metadata.originalFilename).name : 'transcript'
-    return { filePath, fileName: `${stem}.${input.format}` }
+    const stem = metadata ? path.parse(metadata.originalFilename).name : 'transcription'
+    return { filePath, fileName: `${stem}_transcription.${input.format}` }
   })
 
   // Get partial transcript segments during active transcription

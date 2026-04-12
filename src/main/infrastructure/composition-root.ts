@@ -5,6 +5,7 @@ import { FFmpegAudioExtractor } from './services/ffmpeg-audio-extractor'
 import { WhisperTranscriber } from './services/whisper-transcriber'
 import { WhisperFormatter } from './services/whisper-formatter'
 import { DrizzleJobRepository } from './repositories/drizzle-job-repository'
+import { DrizzleFolderRepository } from './repositories/drizzle-folder-repository'
 import { CreateJobUseCase } from '../application/use-cases/create-job'
 import { ProcessJobUseCase } from '../application/use-cases/process-job'
 import { RetryJobUseCase } from '../application/use-cases/retry-job'
@@ -29,6 +30,7 @@ export function createCompositionRoot() {
   // ── Infrastructure ──────────────────────────────────────────────────────────
 
   const repo = new DrizzleJobRepository(getDb(), config.jobFilesDir)
+  const folderRepo = new DrizzleFolderRepository(getDb())
 
   const extractor = new FFmpegAudioExtractor(config.ffmpegPath, config.ffprobePath)
 
@@ -66,6 +68,7 @@ export function createCompositionRoot() {
 
   return {
     repo,
+    folderRepo,
     createJobUc,
     retryJobUc,
     queue,
