@@ -50,6 +50,43 @@ export const paginationInputSchema = z.object({
   offset: z.number().int().min(0).default(0),
 })
 
+// ── Folder schemas ────────────────────────────────────────────────────────────
+
+export const folderIdSchema = z
+  .string()
+  .regex(JOB_ID_REGEX, 'Folder ID must be a 32-char hex string')
+
+export const createFolderInputSchema = z.object({
+  name:     z.string().min(1).max(100),
+  parentId: folderIdSchema.nullable().optional(),
+})
+
+export const renameFolderInputSchema = z.object({
+  folderId: folderIdSchema,
+  name: z.string().min(1).max(100),
+})
+
+export const deleteFolderInputSchema = z.object({
+  folderId: folderIdSchema,
+})
+
+export const moveJobToFolderInputSchema = z.object({
+  jobId: jobIdSchema,
+  folderId: folderIdSchema.nullable(),
+})
+
+// Extends pagination to support folder filter:
+// undefined = all jobs, '__uncategorized__' = jobs with no folder, string = specific folder id
+export const listJobsInputSchema = paginationInputSchema.extend({
+  folderId: z.union([folderIdSchema, z.literal('__uncategorized__')]).optional(),
+})
+
+export type CreateFolderInput = z.infer<typeof createFolderInputSchema>
+export type RenameFolderInput = z.infer<typeof renameFolderInputSchema>
+export type DeleteFolderInput = z.infer<typeof deleteFolderInputSchema>
+export type MoveJobToFolderInput = z.infer<typeof moveJobToFolderInputSchema>
+export type ListJobsInput = z.infer<typeof listJobsInputSchema>
+
 export const jobGetInputSchema = z.object({
   jobId: jobIdSchema,
 })
@@ -64,6 +101,11 @@ export const modelSetDefaultInputSchema = z.object({
 
 export const modelNameInputSchema = z.object({
   name: z.string().min(1),
+})
+
+export const saveFileInputSchema = z.object({
+  sourcePath:  z.string().min(1),
+  defaultName: z.string().min(1),
 })
 
 // ── Inferred types (used in IpcMap) ───────────────────────────────────────────

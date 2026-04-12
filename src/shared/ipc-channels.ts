@@ -14,7 +14,11 @@ import type {
   RenameJobInput,
   DownloadInput,
   RetryJobInput,
-  PaginationInput,
+  CreateFolderInput,
+  RenameFolderInput,
+  DeleteFolderInput,
+  MoveJobToFolderInput,
+  ListJobsInput,
 } from './schemas'
 import type {
   JobMetadata,
@@ -23,6 +27,7 @@ import type {
   JobProgressEvent,
   JobCompletedEvent,
   JobFailedEvent,
+  Folder,
 } from './types'
 
 // ── Channel name constants ────────────────────────────────────────────────────
@@ -51,9 +56,19 @@ export const IPC = {
   APP_HEALTH:              'app:health',
   APP_SELECT_FILES:        'app:selectFiles',
   APP_REVEAL_FILE:         'app:revealFile',
+  APP_SAVE_FILE:           'app:saveFile',
 
   // ── Jobs (extra helpers) ──
   JOBS_GET_FILE_CONTENT:   'jobs:getFileContent',
+
+  // ── Folders (invoke: renderer → main) ──
+  FOLDERS_LIST:            'folders:list',
+  FOLDERS_CREATE:          'folders:create',
+  FOLDERS_RENAME:          'folders:rename',
+  FOLDERS_DELETE:          'folders:delete',
+
+  // ── Job folder assignment ──
+  JOBS_MOVE_TO_FOLDER:     'jobs:moveToFolder',
 
   // ── Push events (on: renderer ← main) ──
   JOB_PROGRESS:            'job:progress',
@@ -76,7 +91,7 @@ export interface IpcMap {
     output: JobMetadata[]
   }
   [IPC.JOBS_LIST]: {
-    input: PaginationInput
+    input: ListJobsInput
     output: { jobs: JobMetadata[]; total: number }
   }
   [IPC.JOBS_GET]: {
@@ -139,9 +154,33 @@ export interface IpcMap {
     input: { filePath: string }
     output: void
   }
+  [IPC.APP_SAVE_FILE]: {
+    input: { sourcePath: string; defaultName: string }
+    output: { saved: boolean }
+  }
   [IPC.JOBS_GET_FILE_CONTENT]: {
     input: { jobId: string; format: string }
     output: { content: string }
+  }
+  [IPC.FOLDERS_LIST]: {
+    input: void
+    output: { folders: Folder[] }
+  }
+  [IPC.FOLDERS_CREATE]: {
+    input: CreateFolderInput
+    output: Folder
+  }
+  [IPC.FOLDERS_RENAME]: {
+    input: RenameFolderInput
+    output: Folder
+  }
+  [IPC.FOLDERS_DELETE]: {
+    input: DeleteFolderInput
+    output: void
+  }
+  [IPC.JOBS_MOVE_TO_FOLDER]: {
+    input: MoveJobToFolderInput
+    output: JobMetadata
   }
   // Push events — no invoke, only on()
   [IPC.JOB_PROGRESS]: {
