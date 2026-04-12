@@ -1,7 +1,9 @@
 import fs from 'node:fs'
+import path from 'node:path'
 import { dialog, shell } from 'electron'
 import { IPC } from '../../../../shared/ipc-channels'
 import { ALLOWED_EXTENSIONS } from '../../../../shared/constants'
+import { saveFileInputSchema } from '../../../../shared/schemas'
 import { handleIpc } from '../ipc-wrapper'
 
 export function registerAppHandlers(
@@ -36,6 +38,19 @@ export function registerAppHandlers(
   handleIpc(IPC.APP_REVEAL_FILE, null, async (input: unknown) => {
     const { filePath } = input as { filePath: string }
     await shell.showItemInFolder(filePath)
+  })
+
+  // Show save dialog and copy source file to chosen destination
+  handleIpc(IPC.APP_SAVE_FILE, saveFileInputSchema, async (input) => {
+    const { sourcePath, defaultName } = input
+    const ext = path.extname(defaultName).slice(1)
+    const result = await dialog.showSaveDialog({
+      defaultPath: defaultName,
+      filters: ext ? [{ name: ext.toUpperCase(), extensions: [ext] }] : [],
+    })
+    if (result.canceled || !result.filePath) return { saved: false }
+    fs.copyFileSync(sourcePath, result.filePath)
+    return { saved: true }
   })
 }
 

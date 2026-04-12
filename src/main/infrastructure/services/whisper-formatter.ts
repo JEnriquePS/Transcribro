@@ -34,7 +34,6 @@ export function formatEnrichedJson(result: TranscriptResult): string {
     original_filename: result.originalFilename,
     model:             result.model,
     language:          result.language,
-    full_text:         result.fullText,
     segments:          enrichedSegments,
   }
 
