@@ -4,6 +4,13 @@
  * camelCase convention — snake_case is only used at the Python API boundary.
  */
 
+export interface Folder {
+  readonly id: string
+  readonly name: string
+  readonly parentId: string | null
+  readonly createdAt: string | null
+}
+
 export enum JobStatus {
   PENDING = 'pending',
   EXTRACTING = 'extracting',
@@ -36,6 +43,7 @@ export interface JobMetadata {
   readonly startedAt: string | null
   readonly completedAt: string | null
   readonly durationSeconds: number | null
+  readonly folderId: string | null
 }
 
 export interface TranscriptSegment {

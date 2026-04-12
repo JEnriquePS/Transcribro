@@ -20,6 +20,12 @@ export class JobNotFoundError extends DomainError {
   }
 }
 
+export class FolderNotFoundError extends DomainError {
+  constructor(public readonly folderId: string) {
+    super(ErrorCode.FOLDER_NOT_FOUND, `Folder not found: ${folderId}`)
+  }
+}
+
 export class InvalidJobStateError extends DomainError {
   constructor(
     public readonly jobId: string,
