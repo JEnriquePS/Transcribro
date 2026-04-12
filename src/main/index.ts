@@ -1,4 +1,4 @@
-import { app, BrowserWindow, shell } from 'electron'
+import { app, BrowserWindow, shell, nativeImage } from 'electron'
 import path from 'node:path'
 import { config } from './config'
 import { initDb, getDb } from './infrastructure/db/client'
@@ -6,6 +6,10 @@ import { runMigrations } from './infrastructure/db/migrate'
 import { migrateLegacyData } from './infrastructure/db/legacy-migration'
 import { createCompositionRoot } from './infrastructure/composition-root'
 import { registerAllHandlers } from './infrastructure/ipc/register'
+
+// Override the binary name shown in the menu bar / app switcher during dev.
+// In production electron-builder sets this via productName in the .app bundle.
+app.name = 'Transcribro'
 
 let mainWindow: BrowserWindow | null = null
 
@@ -52,6 +56,12 @@ function createWindow(): BrowserWindow {
 }
 
 app.whenReady().then(async () => {
+  // Set dock icon in dev (in production electron-builder injects the .icns)
+  if (!app.isPackaged) {
+    const iconPath = path.join(__dirname, '../resources/icon.png')
+    app.dock?.setIcon(nativeImage.createFromPath(iconPath))
+  }
+
   // 1. Init SQLite database and run schema migrations
   initDb(config.dbPath)
   runMigrations(getDb())

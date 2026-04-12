@@ -1,7 +1,7 @@
 import { useParams, useNavigate } from 'react-router-dom'
 import {
   ArrowLeft,
-  FileVideo,
+  File,
   AlertCircle,
   Loader2,
   RefreshCw,
@@ -62,7 +62,7 @@ export function JobDetailPage() {
           className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
         >
           <ArrowLeft size={16} />
-          Back to jobs
+          Back to transcriptions
         </button>
         <p className="text-sm text-error bg-error-muted border border-error rounded px-3 py-2">
           {error ?? 'Job not found'}
@@ -79,7 +79,7 @@ export function JobDetailPage() {
         className="flex items-center gap-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
       >
         <ArrowLeft size={16} />
-        Back to jobs
+        Back to transcriptions
       </button>
 
       {/* Header */}
@@ -89,7 +89,7 @@ export function JobDetailPage() {
         aria-live="polite"
       >
         <div className="flex items-center gap-2">
-          <FileVideo size={18} className="text-accent-text" />
+          <File size={18} className="text-accent-text" />
           <h1 className="text-lg font-semibold text-text-primary">
             {metadata.originalFilename}
           </h1>

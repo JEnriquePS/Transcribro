@@ -1,4 +1,4 @@
-import { contextBridge, ipcRenderer, IpcRendererEvent } from 'electron'
+import { contextBridge, ipcRenderer, IpcRendererEvent, webUtils } from 'electron'
 
 // Expose a typed, minimal API to the renderer via contextBridge.
 // This is the ONLY bridge between renderer (sandboxed) and main process.
@@ -23,4 +23,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on(channel, wrapped)
     return () => ipcRenderer.removeListener(channel, wrapped)
   },
+
+  getFilePath: (file: File): string => webUtils.getPathForFile(file),
 })
