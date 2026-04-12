@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <!-- Background gradient: deep dark teal -->
+    <linearGradient id="bg" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#051413"/>
+      <stop offset="100%" stop-color="#0a2422"/>
+    </linearGradient>
+
+    <!-- Bar gradient: light teal → deep teal (vertical) -->
+    <linearGradient id="barGrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#99f6e4"/>
+      <stop offset="55%" stop-color="#2dd4bf"/>
+      <stop offset="100%" stop-color="#0d9488"/>
+    </linearGradient>
+
+    <!-- Radial glow behind waveform -->
+    <radialGradient id="glow" cx="50%" cy="40%" r="45%">
+      <stop offset="0%" stop-color="#0d9488" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#0d9488" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Background rounded square (macOS style) -->
+  <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
+
+  <!-- Soft glow behind bars -->
+  <rect width="1024" height="1024" rx="220" fill="url(#glow)"/>
+
+  <!--
+    Waveform: 5 symmetric bars
+    Bar width: 56px, gap: 32px → total: 5×56 + 4×32 = 408px
+    Centered: start x = (1024 - 408) / 2 = 308
+    Bars: x = 308, 396, 484, 572, 660
+    Center y = 410; heights: 200, 380, 500, 380, 200
+    Bar 3 (center) bottom: y=160+500=660
+  -->
+
+  <!-- Bar 1 (outer left) -->
+  <rect x="308" y="310" width="56" height="200" rx="28" fill="url(#barGrad)" opacity="0.55"/>
+
+  <!-- Bar 2 (inner left) -->
+  <rect x="396" y="220" width="56" height="380" rx="28" fill="url(#barGrad)" opacity="0.78"/>
+
+  <!-- Bar 3 (center — also the stem of the inverted T) -->
+  <rect x="484" y="160" width="56" height="500" rx="28" fill="url(#barGrad)"/>
+
+  <!-- Bar 4 (inner right) -->
+  <rect x="572" y="220" width="56" height="380" rx="28" fill="url(#barGrad)" opacity="0.78"/>
+
+  <!-- Bar 5 (outer right) -->
+  <rect x="660" y="310" width="56" height="200" rx="28" fill="url(#barGrad)" opacity="0.55"/>
+
+  <!--
+    Inverted T (⊥) — teal lines, same color family as bars, all centered at x=512.
+    Bar 3 acts as the vertical stem; line 1 is the T crossbar.
+    Thin connector bridges the gap between bar-3 bottom (y=660) and crossbar (y=686).
+    x = 512 - width/2
+  -->
+
+  <!-- Line 1 — T crossbar (widest, boldest) -->
+  <rect x="252" y="686" width="520" height="28" rx="14" fill="#2dd4bf" opacity="0.88"/>
+
+  <!-- Line 2 -->
+  <rect x="312" y="736" width="400" height="22" rx="11" fill="#2dd4bf" opacity="0.62"/>
+
+  <!-- Line 3 -->
+  <rect x="352" y="778" width="320" height="22" rx="11" fill="#2dd4bf" opacity="0.42"/>
+
+  <!-- Line 4 -->
+  <rect x="412" y="820" width="200" height="18" rx="9" fill="#2dd4bf" opacity="0.24"/>
+</svg>
