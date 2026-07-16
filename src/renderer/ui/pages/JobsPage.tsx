@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Inbox, Loader2, List, Calendar, Type, ArrowDownNarrowWide, ArrowUpNarrowWide } from 'lucide-react'
+import { Inbox, Loader2, List, Calendar, Type, ArrowDownNarrowWide, ArrowUpNarrowWide, Search, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { JobCard } from '../components/JobCard'
 import { ConfirmDialog } from '../components/ConfirmDialog'
@@ -52,10 +52,22 @@ export function JobsPage() {
   const { jobs, isLoading, error } = useJobsPolling(true, selectedFolderId)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [jobToDelete, setJobToDelete] = useState<string | null>(null)
-  const [sortDir, setSortDir] = useState<SortDir>('asc')
-  const [sortField, setSortField] = useState<SortField>('name')
+  const [sortDir, setSortDir] = useState<SortDir>('desc')
+  const [sortField, setSortField] = useState<SortField>('date')
   const [filter, setFilter] = useState<FilterStatus>('all')
+  const [search, setSearch] = useState('')
+  const [dateFrom, setDateFrom] = useState('')
+  const [dateTo, setDateTo] = useState('')
   const [nameOverrides, setNameOverrides] = useState<Record<string, string>>({})
+
+  const hasActiveFilters = filter !== 'all' || search.trim() !== '' || dateFrom !== '' || dateTo !== ''
+
+  const clearFilters = () => {
+    setFilter('all')
+    setSearch('')
+    setDateFrom('')
+    setDateTo('')
+  }
 
   useEffect(() => {
     if (error) toast.error(error)
@@ -151,10 +163,22 @@ export function JobsPage() {
   )
 
   const filtered = jobsWithOverrides.filter((job) => {
-    if (filter === 'all') return true
-    if (filter === 'active') return ACTIVE_STATUSES.has(job.status)
-    if (filter === 'completed') return job.status === JobStatus.COMPLETED
-    if (filter === 'failed') return job.status === JobStatus.FAILED
+    if (filter === 'active' && !ACTIVE_STATUSES.has(job.status)) return false
+    if (filter === 'completed' && job.status !== JobStatus.COMPLETED) return false
+    if (filter === 'failed' && job.status !== JobStatus.FAILED) return false
+
+    if (search.trim() !== '') {
+      const query = search.trim().toLowerCase()
+      const name = (job.displayName ?? job.originalFilename).toLowerCase()
+      if (!name.includes(query)) return false
+    }
+
+    // createdAt is a full ISO timestamp; compare only the date portion so
+    // "Hasta" includes the entire selected day, not just its midnight instant.
+    const jobDate = job.createdAt?.slice(0, 10) ?? ''
+    if (dateFrom !== '' && (jobDate === '' || jobDate < dateFrom)) return false
+    if (dateTo !== '' && (jobDate === '' || jobDate > dateTo)) return false
+
     return true
   })
 
@@ -231,24 +255,96 @@ export function JobsPage() {
           )}
         </div>
 
-        {/* Filter chips */}
+        {/* Search */}
         {jobs.length > 0 && (
-          <div role="group" aria-label="Filter by status" className="flex gap-2 flex-wrap">
-            {(['all', 'active', 'completed', 'failed'] as const).map((f) => (
+          <div className="relative">
+            <Search
+              size={15}
+              aria-hidden="true"
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
+            />
+            <label htmlFor="jobs-search" className="sr-only">
+              Buscar transcripciones por nombre
+            </label>
+            <input
+              id="jobs-search"
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Buscar por nombre de archivo..."
+              className="w-full bg-surface-elevated border border-border-default rounded pl-8 pr-8 py-1.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
+            />
+            {search !== '' && (
               <button
-                key={f}
                 type="button"
-                onClick={() => setFilter(f)}
-                aria-pressed={filter === f}
-                className={`text-xs px-3 py-1 rounded-full border transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
-                  filter === f
-                    ? 'bg-accent-text text-white border-accent-text'
-                    : 'bg-surface text-text-secondary border-border-default hover:text-text-primary hover:border-border-hover'
-                }`}
+                onClick={() => setSearch('')}
+                aria-label="Limpiar búsqueda"
+                className="absolute right-2 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent rounded"
               >
-                {FILTER_LABELS[f]}
+                <X size={14} aria-hidden="true" />
               </button>
-            ))}
+            )}
+          </div>
+        )}
+
+        {/* Filter chips + date range */}
+        {jobs.length > 0 && (
+          <div className="flex items-center gap-3 flex-wrap">
+            <div role="group" aria-label="Filtrar por estado" className="flex gap-2 flex-wrap">
+              {(['all', 'active', 'completed', 'failed'] as const).map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setFilter(f)}
+                  aria-pressed={filter === f}
+                  className={`text-xs px-3 py-1 rounded-full border transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface ${
+                    filter === f
+                      ? 'bg-accent-text text-white border-accent-text'
+                      : 'bg-surface text-text-secondary border-border-default hover:text-text-primary hover:border-border-hover'
+                  }`}
+                >
+                  {FILTER_LABELS[f]}
+                </button>
+              ))}
+            </div>
+
+            <div className="flex items-center gap-1.5 text-xs text-text-secondary">
+              <label htmlFor="jobs-date-from" className="sr-only">
+                Fecha desde
+              </label>
+              <input
+                id="jobs-date-from"
+                type="date"
+                value={dateFrom}
+                onChange={(e) => setDateFrom(e.target.value)}
+                max={dateTo || undefined}
+                aria-label="Fecha desde"
+                className="bg-surface-elevated border border-border-default rounded px-2 py-1 text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+              />
+              <span aria-hidden="true">–</span>
+              <label htmlFor="jobs-date-to" className="sr-only">
+                Fecha hasta
+              </label>
+              <input
+                id="jobs-date-to"
+                type="date"
+                value={dateTo}
+                onChange={(e) => setDateTo(e.target.value)}
+                min={dateFrom || undefined}
+                aria-label="Fecha hasta"
+                className="bg-surface-elevated border border-border-default rounded px-2 py-1 text-text-primary focus:outline-none focus:ring-2 focus:ring-accent"
+              />
+            </div>
+
+            {hasActiveFilters && (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="text-xs text-accent-text hover:text-accent-text transition-colors cursor-pointer focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded px-1"
+              >
+                Limpiar filtros
+              </button>
+            )}
           </div>
         )}
 
@@ -276,13 +372,13 @@ export function JobsPage() {
         ) : sorted.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-12 text-text-secondary">
             <Inbox size={32} className="mb-3 opacity-50" />
-            <p className="text-sm">No transcriptions match this filter</p>
+            <p className="text-sm">Ninguna transcripción coincide con los filtros</p>
             <button
               type="button"
-              onClick={() => setFilter('all')}
+              onClick={clearFilters}
               className="mt-2 text-sm text-accent-text hover:text-accent-text transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
             >
-              Clear filter
+              Limpiar filtros
             </button>
           </div>
         ) : (
