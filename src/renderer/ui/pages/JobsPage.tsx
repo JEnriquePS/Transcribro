@@ -362,7 +362,7 @@ export function JobsPage() {
             {selectedFolderId === undefined && (
               <button
                 type="button"
-                onClick={() => navigate('/')}
+                onClick={() => navigate('/upload')}
                 className="mt-3 text-sm text-accent-text hover:text-accent-text transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
               >
                 Upload a file to get started
