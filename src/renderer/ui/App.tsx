@@ -40,12 +40,12 @@ export function App() {
           <div className="no-drag flex items-center gap-2">
             <nav className="flex gap-1" aria-label="Navegación principal">
               <NavLink to="/" end className={navLinkClass}>
-                <Upload size={14} />
-                Upload
-              </NavLink>
-              <NavLink to="/jobs" className={navLinkClass}>
                 <List size={14} />
                 Transcriptions
+              </NavLink>
+              <NavLink to="/upload" className={navLinkClass}>
+                <Upload size={14} />
+                Upload
               </NavLink>
               <NavLink to="/models" className={navLinkClass}>
                 <HardDrive size={14} />
@@ -62,8 +62,8 @@ export function App() {
       <main id="main-content" className="flex-1 px-6 py-8">
         <ErrorBoundary>
           <Routes>
-            <Route path="/" element={<UploadPage />} />
-            <Route path="/jobs" element={<JobsPage />} />
+            <Route path="/" element={<JobsPage />} />
+            <Route path="/upload" element={<UploadPage />} />
             <Route path="/jobs/:id" element={<JobDetailPage />} />
             <Route path="/models" element={<ModelsPage />} />
             <Route path="*" element={<NotFoundPage />} />
