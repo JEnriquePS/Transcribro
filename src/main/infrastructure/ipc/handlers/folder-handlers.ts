@@ -6,10 +6,14 @@ import {
 } from '../../../../shared/schemas'
 import { handleIpc } from '../ipc-wrapper'
 import type { DrizzleFolderRepository } from '../../repositories/drizzle-folder-repository'
+import type { DrizzleJobRepository } from '../../repositories/drizzle-job-repository'
 
-export function registerFolderHandlers(folderRepo: DrizzleFolderRepository): void {
+export function registerFolderHandlers(
+  folderRepo: DrizzleFolderRepository,
+  jobRepo: DrizzleJobRepository,
+): void {
   handleIpc(IPC.FOLDERS_LIST, null, () => {
-    return { folders: folderRepo.list() }
+    return { folders: folderRepo.list(), jobCounts: jobRepo.countByFolder() }
   })
 
   handleIpc(IPC.FOLDERS_CREATE, createFolderInputSchema, (input) => {

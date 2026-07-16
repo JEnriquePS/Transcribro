@@ -164,7 +164,8 @@ export interface IpcMap {
   }
   [IPC.FOLDERS_LIST]: {
     input: void
-    output: { folders: Folder[] }
+    // jobCounts: direct (non-recursive) job count per folder id — used to badge folder tiles
+    output: { folders: Folder[]; jobCounts: Record<string, number> }
   }
   [IPC.FOLDERS_CREATE]: {
     input: CreateFolderInput

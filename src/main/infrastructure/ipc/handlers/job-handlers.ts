@@ -18,14 +18,12 @@ import { JobStatus } from '../../../../shared/types'
 import { JobNotFoundError } from '../../../domain/errors'
 import { handleIpc } from '../ipc-wrapper'
 import type { DrizzleJobRepository } from '../../repositories/drizzle-job-repository'
-import type { DrizzleFolderRepository } from '../../repositories/drizzle-folder-repository'
 import type { CreateJobUseCase } from '../../../application/use-cases/create-job'
 import type { RetryJobUseCase } from '../../../application/use-cases/retry-job'
 import type { JobQueue } from '../../../application/job-queue'
 
 export function registerJobHandlers(
   repo: DrizzleJobRepository,
-  folderRepo: DrizzleFolderRepository,
   createJobUc: CreateJobUseCase,
   retryJobUc: RetryJobUseCase,
   queue: JobQueue,
@@ -46,13 +44,12 @@ export function registerJobHandlers(
     })
   })
 
-  // List jobs with optional folder filter (recursive: includes descendants)
+  // List jobs with optional folder filter (exact folder only — subfolders are browsed separately)
   handleIpc(IPC.JOBS_LIST, listJobsInputSchema, (input) => {
     if (input.folderId === '__uncategorized__') {
       return repo.list(input.limit, input.offset, null)
     } else if (input.folderId) {
-      const ids = folderRepo.getAllDescendantIds(input.folderId)
-      return repo.list(input.limit, input.offset, ids)
+      return repo.list(input.limit, input.offset, [input.folderId])
     }
     return repo.list(input.limit, input.offset, undefined)
   })

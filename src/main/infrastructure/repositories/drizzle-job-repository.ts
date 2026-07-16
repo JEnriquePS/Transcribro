@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { eq, desc, count, isNull, inArray } from 'drizzle-orm'
+import { eq, desc, count, isNull, isNotNull, inArray } from 'drizzle-orm'
 import { jobs, transcriptSegments, transcriptResults } from '../db/schema'
 import type { Db } from '../db/client'
 import type { JobMetadata, TranscriptSegment, TranscriptResult } from '../../../shared/types'
@@ -144,6 +144,18 @@ export class DrizzleJobRepository {
     const [{ value: total }] = (whereClause ? countQuery.where(whereClause) : countQuery).all()
 
     return { jobs: rows.map(rowToMetadata), total }
+  }
+
+  /** Direct (non-recursive) job count per folder — used to badge folder tiles in the UI. */
+  countByFolder(): Record<string, number> {
+    const rows = this.db
+      .select({ folderId: jobs.folderId, value: count() })
+      .from(jobs)
+      .where(isNotNull(jobs.folderId))
+      .groupBy(jobs.folderId)
+      .all()
+
+    return Object.fromEntries(rows.map((r) => [r.folderId as string, r.value]))
   }
 
   moveToFolder(jobId: string, folderId: string | null): JobMetadata {

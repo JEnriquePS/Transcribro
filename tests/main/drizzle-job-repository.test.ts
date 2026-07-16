@@ -5,6 +5,7 @@ import fs from 'node:fs'
 import { initDb, resetDb } from '../../src/main/infrastructure/db/client'
 import { runMigrations } from '../../src/main/infrastructure/db/migrate'
 import { DrizzleJobRepository } from '../../src/main/infrastructure/repositories/drizzle-job-repository'
+import { DrizzleFolderRepository } from '../../src/main/infrastructure/repositories/drizzle-folder-repository'
 import { JobNotFoundError, UnsupportedFormatError } from '../../src/main/domain/errors'
 import { JobStatus } from '../../src/shared/types'
 import type { JobMetadata } from '../../src/shared/types'
@@ -36,6 +37,7 @@ function makeJob(overrides: Partial<JobMetadata> = {}): JobMetadata {
 
 describe('DrizzleJobRepository', () => {
   let repo: DrizzleJobRepository
+  let folderRepo: DrizzleFolderRepository
   let jobFilesDir: string
 
   beforeEach(() => {
@@ -44,6 +46,7 @@ describe('DrizzleJobRepository', () => {
     const db = initDb(':memory:')
     runMigrations(db)
     repo = new DrizzleJobRepository(db, jobFilesDir)
+    folderRepo = new DrizzleFolderRepository(db)
   })
 
   // ── save / get ─────────────────────────────────────────────────────────────
@@ -215,5 +218,26 @@ describe('DrizzleJobRepository', () => {
     repo.delete(job.id)
     // After delete, segment queries should return empty
     expect(repo.getPartialSegments(job.id)).toEqual([])
+  })
+
+  // ── countByFolder ──────────────────────────────────────────────────────────
+
+  it('returns an empty object when no jobs have a folder', () => {
+    repo.save(makeJob())
+    expect(repo.countByFolder()).toEqual({})
+  })
+
+  it('counts jobs directly per folder, without rolling up to parent folders', () => {
+    const parent = folderRepo.create('Parent')
+    const child = folderRepo.create('Child', parent.id)
+
+    const idA = 'a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'
+    const idB = 'b1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'
+    const idC = 'c1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'
+    repo.save(makeJob({ id: idA, folderId: parent.id }))
+    repo.save(makeJob({ id: idB, folderId: parent.id }))
+    repo.save(makeJob({ id: idC, folderId: child.id }))
+
+    expect(repo.countByFolder()).toEqual({ [parent.id]: 2, [child.id]: 1 })
   })
 })

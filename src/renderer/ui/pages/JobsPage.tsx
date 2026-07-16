@@ -1,8 +1,20 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Inbox, Loader2, List, Calendar, Type, ArrowDownNarrowWide, ArrowUpNarrowWide, Search, X } from 'lucide-react'
+import {
+  Inbox,
+  Loader2,
+  List,
+  Calendar,
+  Type,
+  ArrowDownNarrowWide,
+  ArrowUpNarrowWide,
+  Search,
+  X,
+  ChevronRight,
+} from 'lucide-react'
 import { toast } from 'sonner'
 import { JobCard } from '../components/JobCard'
+import { FolderCard } from '../components/FolderCard'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { FolderSidebar } from '../components/FolderSidebar'
 import { useJobsPolling } from '../../application/hooks/use-job-polling'
@@ -27,6 +39,41 @@ const ACTIVE_STATUSES = new Set<JobStatus>([
   JobStatus.FORMATTING,
 ])
 
+/** Chain of ancestor folders from root to the given folder, for breadcrumb navigation. */
+function buildBreadcrumb(folders: readonly Folder[], folderId: string): Folder[] {
+  const byId = new Map(folders.map((f) => [f.id, f]))
+  const chain: Folder[] = []
+  let current = byId.get(folderId)
+  while (current) {
+    chain.unshift(current)
+    current = current.parentId ? byId.get(current.parentId) : undefined
+  }
+  return chain
+}
+
+/** Direct job counts rolled up through the folder tree, so a parent tile shows everything beneath it. */
+function buildRecursiveCounts(
+  folders: readonly Folder[],
+  directCounts: Record<string, number>,
+): Record<string, number> {
+  const childrenOf = new Map<string, Folder[]>()
+  for (const f of folders) {
+    if (!f.parentId) continue
+    if (!childrenOf.has(f.parentId)) childrenOf.set(f.parentId, [])
+    childrenOf.get(f.parentId)!.push(f)
+  }
+  const memo: Record<string, number> = {}
+  const resolve = (id: string): number => {
+    if (memo[id] !== undefined) return memo[id]
+    let total = directCounts[id] ?? 0
+    for (const child of childrenOf.get(id) ?? []) total += resolve(child.id)
+    memo[id] = total
+    return total
+  }
+  for (const f of folders) resolve(f.id)
+  return memo
+}
+
 export function JobsPage() {
   const navigate = useNavigate()
 
@@ -34,11 +81,14 @@ export function JobsPage() {
   // undefined = All, null = Uncategorized, string = specific folder id
   const [selectedFolderId, setSelectedFolderId] = useState<string | null | undefined>(undefined)
   const [folders, setFolders] = useState<readonly Folder[]>([])
+  // Direct (non-recursive) job count per folder id, as returned by the backend
+  const [jobCounts, setJobCounts] = useState<Record<string, number>>({})
 
   const loadFolders = useCallback(async () => {
     try {
       const data = await ipc.listFolders()
       setFolders(data.folders)
+      setJobCounts(data.jobCounts)
     } catch {
       // Non-critical — don't show toast for folder list errors
     }
@@ -52,6 +102,8 @@ export function JobsPage() {
   const { jobs, isLoading, error } = useJobsPolling(true, selectedFolderId)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [jobToDelete, setJobToDelete] = useState<string | null>(null)
+  const [deletingFolderId, setDeletingFolderId] = useState<string | null>(null)
+  const [folderToDelete, setFolderToDelete] = useState<Folder | null>(null)
   const [sortDir, setSortDir] = useState<SortDir>('desc')
   const [sortField, setSortField] = useState<SortField>('date')
   const [filter, setFilter] = useState<FilterStatus>('all')
@@ -99,14 +151,32 @@ export function JobsPage() {
     try {
       await ipc.deleteFolder(folderId)
       // Reload fresh list — cascade may have removed descendant folders too
-      const { folders: fresh } = await ipc.listFolders()
+      const { folders: fresh, jobCounts: freshCounts } = await ipc.listFolders()
       setFolders(fresh)
+      setJobCounts(freshCounts)
       // If the selected folder or any of its ancestors was deleted, reset to All
       if (typeof selectedFolderId === 'string' && !fresh.some((f) => f.id === selectedFolderId)) {
         setSelectedFolderId(undefined)
       }
     } catch {
       toast.error('No se pudo eliminar la carpeta. Intenta de nuevo.')
+    }
+  }
+
+  const handleDeleteFolderTile = (folder: Folder, e: React.MouseEvent) => {
+    e.stopPropagation()
+    setFolderToDelete(folder)
+  }
+
+  const confirmDeleteFolderTile = async () => {
+    if (!folderToDelete) return
+    const folder = folderToDelete
+    setFolderToDelete(null)
+    setDeletingFolderId(folder.id)
+    try {
+      await handleDeleteFolder(folder.id)
+    } finally {
+      setDeletingFolderId(null)
     }
   }
 
@@ -161,6 +231,27 @@ export function JobsPage() {
       ? { ...job, displayName: nameOverrides[job.id] }
       : job,
   )
+
+  const breadcrumb = typeof selectedFolderId === 'string' ? buildBreadcrumb(folders, selectedFolderId) : []
+  const allSubfolders =
+    typeof selectedFolderId === 'string'
+      ? folders.filter((f) => f.parentId === selectedFolderId).sort((a, b) => a.name.localeCompare(b.name))
+      : []
+  // The search box filters folders too, like a file explorer — status/date filters stay job-only
+  const subfolders =
+    search.trim() === ''
+      ? allSubfolders
+      : allSubfolders.filter((f) => f.name.toLowerCase().includes(search.trim().toLowerCase()))
+  const recursiveCounts = buildRecursiveCounts(folders, jobCounts)
+
+  const folderToDeleteHasChildren = folderToDelete
+    ? folders.some((f) => f.parentId === folderToDelete.id)
+    : false
+  const folderToDeleteMessage = folderToDelete
+    ? folderToDeleteHasChildren
+      ? `Se eliminará la carpeta "${folderToDelete.name}" y todas sus subcarpetas. Los trabajos dentro quedarán sin carpeta. Esta acción no se puede deshacer.`
+      : `Se eliminará la carpeta "${folderToDelete.name}". Los trabajos dentro quedarán sin carpeta. Esta acción no se puede deshacer.`
+    : ''
 
   const filtered = jobsWithOverrides.filter((job) => {
     if (filter === 'active' && !ACTIVE_STATUSES.has(job.status)) return false
@@ -255,8 +346,39 @@ export function JobsPage() {
           )}
         </div>
 
-        {/* Search */}
-        {jobs.length > 0 && (
+        {/* Breadcrumb — only when browsing inside a specific folder */}
+        {breadcrumb.length > 0 && (
+          <nav aria-label="Ubicación de carpeta" className="flex items-center gap-1 text-xs text-text-secondary flex-wrap">
+            <button
+              type="button"
+              onClick={() => setSelectedFolderId(undefined)}
+              className="hover:text-text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded px-0.5"
+            >
+              Todas
+            </button>
+            {breadcrumb.map((f, i) => (
+              <span key={f.id} className="flex items-center gap-1">
+                <ChevronRight size={12} aria-hidden="true" />
+                {i === breadcrumb.length - 1 ? (
+                  <span className="text-text-primary font-medium" aria-current="location">
+                    {f.name}
+                  </span>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setSelectedFolderId(f.id)}
+                    className="hover:text-text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded px-0.5"
+                  >
+                    {f.name}
+                  </button>
+                )}
+              </span>
+            ))}
+          </nav>
+        )}
+
+        {/* Search — filters both transcriptions and subfolders by name */}
+        {(jobs.length > 0 || allSubfolders.length > 0) && (
           <div className="relative">
             <Search
               size={15}
@@ -264,14 +386,14 @@ export function JobsPage() {
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
             />
             <label htmlFor="jobs-search" className="sr-only">
-              Buscar transcripciones por nombre
+              Buscar transcripciones y carpetas por nombre
             </label>
             <input
               id="jobs-search"
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar por nombre de archivo..."
+              placeholder="Buscar transcripciones y carpetas..."
               className="w-full bg-surface-elevated border border-border-default rounded pl-8 pr-8 py-1.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
             />
             {search !== '' && (
@@ -287,7 +409,7 @@ export function JobsPage() {
           </div>
         )}
 
-        {/* Filter chips + date range */}
+        {/* Filter chips + date range — status and date only apply to transcriptions */}
         {jobs.length > 0 && (
           <div className="flex items-center gap-3 flex-wrap">
             <div role="group" aria-label="Filtrar por estado" className="flex gap-2 flex-wrap">
@@ -348,15 +470,35 @@ export function JobsPage() {
           </div>
         )}
 
+        {/* Subfolders — click to drill in, like a directory listing */}
+        {subfolders.length > 0 && (
+          <div role="group" aria-label="Subcarpetas" className="space-y-3">
+            {jobs.length > 0 && (
+              <h2 className="text-xs font-medium text-text-secondary uppercase tracking-wide">Carpetas</h2>
+            )}
+            {subfolders.map((f) => (
+              <FolderCard
+                key={f.id}
+                folder={f}
+                itemCount={recursiveCounts[f.id] ?? 0}
+                onClick={() => setSelectedFolderId(f.id)}
+                onRename={handleRenameFolder}
+                onDelete={(e) => handleDeleteFolderTile(f, e)}
+                isDeleting={deletingFolderId === f.id}
+              />
+            ))}
+          </div>
+        )}
+
         {/* Content */}
-        {jobs.length === 0 ? (
+        {jobs.length === 0 && subfolders.length > 0 ? null : jobs.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-text-secondary">
             <Inbox size={40} className="mb-3" />
             <p className="text-sm">
               {selectedFolderId === null
                 ? 'No hay trabajos sin carpeta'
                 : selectedFolderId !== undefined
-                  ? 'Esta carpeta está vacía'
+                  ? 'Esta carpeta no tiene transcripciones directas'
                   : 'No transcriptions yet'}
             </p>
             {selectedFolderId === undefined && (
@@ -383,6 +525,9 @@ export function JobsPage() {
           </div>
         ) : (
           <div className="space-y-3">
+            {subfolders.length > 0 && (
+              <h2 className="text-xs font-medium text-text-secondary uppercase tracking-wide">Transcripciones</h2>
+            )}
             {sorted.map((job) => (
               <JobCard
                 key={job.id}
@@ -405,6 +550,16 @@ export function JobsPage() {
           confirmLabel="Eliminar"
           onConfirm={confirmDelete}
           onCancel={() => setJobToDelete(null)}
+          variant="danger"
+        />
+
+        <ConfirmDialog
+          isOpen={folderToDelete !== null}
+          title="Eliminar carpeta"
+          message={folderToDeleteMessage}
+          confirmLabel="Eliminar"
+          onConfirm={confirmDeleteFolderTile}
+          onCancel={() => setFolderToDelete(null)}
           variant="danger"
         />
       </div>

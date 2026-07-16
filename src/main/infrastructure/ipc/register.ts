@@ -10,8 +10,8 @@ import type { CompositionRoot } from '../composition-root'
  * Must be called after createCompositionRoot() and before createWindow().
  */
 export function registerAllHandlers(root: CompositionRoot): void {
-  registerJobHandlers(root.repo, root.folderRepo, root.createJobUc, root.retryJobUc, root.queue)
-  registerFolderHandlers(root.folderRepo)
+  registerJobHandlers(root.repo, root.createJobUc, root.retryJobUc, root.queue)
+  registerFolderHandlers(root.folderRepo, root.repo)
   registerModelHandlers(config.modelsDir, config)
   registerAppHandlers(config.ffmpegPath, config.whisperCliPath)
 }
