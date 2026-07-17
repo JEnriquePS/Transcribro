@@ -77,3 +77,4 @@ linux:
 
 deb:
   artifactName: "Transcribro-${version}-${arch}.deb"
+  maintainer: "jenriqueps <jenrique.ps@gmail.com>"
