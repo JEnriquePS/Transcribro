@@ -50,7 +50,8 @@ export class ProcessJobUseCase {
     private readonly extractor: FFmpegAudioExtractor,
     private readonly transcriber: WhisperTranscriber,
     private readonly formatter: WhisperFormatter,
-    private readonly defaultThreads: number,
+    /** Resolved per job so settings changes apply without restarting the app. */
+    private readonly getDefaultThreads: () => number,
     private readonly sendEvent: SendEventFn,
     private readonly notify: NotifyFn,
   ) {}
@@ -145,7 +146,7 @@ export class ProcessJobUseCase {
       })
       this.sendEvent(IPC.JOB_PROGRESS, buildProgressEvent(jobId, transcribingState))
 
-      const threads = config.threads ?? this.defaultThreads
+      const threads = config.threads ?? this.getDefaultThreads()
       const { callback: segmentCallback } = this.makeSegmentCallback(jobId)
 
       let result: TranscriptResult = await this.transcriber.transcribe({

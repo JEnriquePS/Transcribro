@@ -41,13 +41,16 @@ export function createCompositionRoot() {
 
   const extractor = new FFmpegAudioExtractor(config.ffmpegPath, config.ffprobePath)
 
+  // Tuning is read lazily so Settings changes apply to the next job without restart
   const transcriber = new WhisperTranscriber(
     config.whisperCliPath,
     config.modelsDir,
-    config.whisper.noSpeechThold,
-    config.whisper.entropyThold,
-    config.whisper.logprobThold,
-    config.whisper.maxContext,
+    () => ({
+      noSpeechThold: config.whisper.noSpeechThold,
+      entropyThold:  config.whisper.entropyThold,
+      logprobThold:  config.whisper.logprobThold,
+      maxContext:    config.whisper.maxContext,
+    }),
   )
 
   const formatter = new WhisperFormatter()
@@ -61,7 +64,7 @@ export function createCompositionRoot() {
     extractor,
     transcriber,
     formatter,
-    config.whisperThreads,
+    () => config.whisperThreads,
     sendEvent,
     notify,
   )

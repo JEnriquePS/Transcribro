@@ -32,6 +32,54 @@ export interface TranscribeOptions {
   readonly onSegment?: SegmentCallback
 }
 
+/** Tunable whisper.cpp decoding parameters — resolved per transcription run. */
+export interface WhisperTuning {
+  readonly noSpeechThold: number
+  readonly entropyThold: number
+  readonly logprobThold: number
+  readonly maxContext: number
+}
+
+export interface WhisperArgsInput {
+  readonly modelPath: string
+  readonly audioPath: string
+  readonly outputPrefix: string
+  readonly language: string
+  readonly threads: number
+  readonly offsetMs: number
+}
+
+/** Build the full whisper-cli argument list. Pure — exported for testing. */
+export function buildWhisperArgs(input: WhisperArgsInput, tuning: WhisperTuning): string[] {
+  const args = [
+    '-m', input.modelPath,
+    '-f', input.audioPath,
+    '-of', input.outputPrefix,
+    '--output-json',
+    '--output-srt',
+    '--output-vtt',
+    '--output-txt',
+    '--print-progress',
+    '-t', String(input.threads),
+    '--no-speech-thold', String(tuning.noSpeechThold),
+    '--entropy-thold',   String(tuning.entropyThold),
+    '--logprob-thold',   String(tuning.logprobThold),
+    '--max-context',     String(tuning.maxContext),
+  ]
+
+  if (input.offsetMs > 0) {
+    args.push('--offset', String(input.offsetMs))
+  }
+
+  if (input.language === 'auto') {
+    args.push('--detect-language')
+  } else {
+    args.push('-l', input.language)
+  }
+
+  return args
+}
+
 function parseTimestamp(h: string, m: string, s: string, ms: string): number {
   return parseInt(h) * 3600 + parseInt(m) * 60 + parseInt(s) + parseInt(ms) / 1000
 }
@@ -95,10 +143,8 @@ export class WhisperTranscriber {
   constructor(
     private readonly whisperCliPath: string,
     private readonly modelsDir: string,
-    private readonly noSpeechThold: number = 0.6,
-    private readonly entropyThold: number = 2.4,
-    private readonly logprobThold: number = -1.0,
-    private readonly maxContext: number = 0,
+    /** Resolved on every run so settings changes apply without restarting the app. */
+    private readonly getTuning: () => WhisperTuning,
   ) {}
 
   private getModelPath(modelSize: string): string {
@@ -130,31 +176,10 @@ export class WhisperTranscriber {
     const modelPath = this.getModelPath(modelSize)
     const outputPrefix = path.join(outputDir, 'transcript')
 
-    const cmd = [
-      '-m', modelPath,
-      '-f', audioPath,
-      '-of', outputPrefix,
-      '--output-json',
-      '--output-srt',
-      '--output-vtt',
-      '--output-txt',
-      '--print-progress',
-      '-t', String(threads),
-      '--no-speech-thold', String(this.noSpeechThold),
-      '--entropy-thold',   String(this.entropyThold),
-      '--logprob-thold',   String(this.logprobThold),
-      '--max-context',     String(this.maxContext),
-    ]
-
-    if (offsetMs > 0) {
-      cmd.push('--offset', String(offsetMs))
-    }
-
-    if (language === 'auto') {
-      cmd.push('--detect-language')
-    } else {
-      cmd.push('-l', language)
-    }
+    const cmd = buildWhisperArgs(
+      { modelPath, audioPath, outputPrefix, language, threads, offsetMs },
+      this.getTuning(),
+    )
 
     const proc = spawn(this.whisperCliPath, cmd)
 
