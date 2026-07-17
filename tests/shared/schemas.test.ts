@@ -12,8 +12,9 @@ import {
   jobDeleteInputSchema,
   modelSetDefaultInputSchema,
   modelNameInputSchema,
+  whisperSettingsSchema,
 } from '../../src/shared/schemas'
-import { DEFAULT_MODEL, DEFAULT_LANGUAGE } from '../../src/shared/constants'
+import { DEFAULT_MODEL, DEFAULT_LANGUAGE, WHISPER_DEFAULTS } from '../../src/shared/constants'
 
 // ── jobIdSchema ───────────────────────────────────────────────────────────────
 
@@ -246,5 +247,67 @@ describe('modelNameInputSchema', () => {
 
   it('rejects empty name', () => {
     expect(() => modelNameInputSchema.parse({ name: '' })).toThrow()
+  })
+})
+
+// ── whisperSettingsSchema ─────────────────────────────────────────────────────
+
+describe('whisperSettingsSchema', () => {
+  const validSettings = {
+    defaultModel: DEFAULT_MODEL,
+    defaultLanguage: DEFAULT_LANGUAGE,
+    threads: WHISPER_DEFAULTS.threads,
+    noSpeechThold: WHISPER_DEFAULTS.noSpeechThold,
+    entropyThold: WHISPER_DEFAULTS.entropyThold,
+    logprobThold: WHISPER_DEFAULTS.logprobThold,
+    maxContext: WHISPER_DEFAULTS.maxContext,
+  }
+
+  it('accepts the shipped defaults', () => {
+    expect(whisperSettingsSchema.parse(validSettings)).toEqual(validSettings)
+  })
+
+  it('accepts boundary values', () => {
+    const boundaries = {
+      ...validSettings,
+      threads: 32,
+      noSpeechThold: 1,
+      entropyThold: 0,
+      logprobThold: -20,
+      maxContext: -1,
+    }
+    expect(whisperSettingsSchema.parse(boundaries)).toEqual(boundaries)
+  })
+
+  it('rejects threads out of range', () => {
+    expect(() => whisperSettingsSchema.parse({ ...validSettings, threads: 0 })).toThrow()
+    expect(() => whisperSettingsSchema.parse({ ...validSettings, threads: 33 })).toThrow()
+  })
+
+  it('rejects non-integer threads and maxContext', () => {
+    expect(() => whisperSettingsSchema.parse({ ...validSettings, threads: 4.5 })).toThrow()
+    expect(() => whisperSettingsSchema.parse({ ...validSettings, maxContext: 10.5 })).toThrow()
+  })
+
+  it('rejects noSpeechThold outside 0..1', () => {
+    expect(() => whisperSettingsSchema.parse({ ...validSettings, noSpeechThold: -0.1 })).toThrow()
+    expect(() => whisperSettingsSchema.parse({ ...validSettings, noSpeechThold: 1.1 })).toThrow()
+  })
+
+  it('rejects positive logprobThold', () => {
+    expect(() => whisperSettingsSchema.parse({ ...validSettings, logprobThold: 0.5 })).toThrow()
+  })
+
+  it('rejects maxContext above the model maximum', () => {
+    expect(() => whisperSettingsSchema.parse({ ...validSettings, maxContext: 225 })).toThrow()
+  })
+
+  it('rejects empty model or language', () => {
+    expect(() => whisperSettingsSchema.parse({ ...validSettings, defaultModel: '' })).toThrow()
+    expect(() => whisperSettingsSchema.parse({ ...validSettings, defaultLanguage: '' })).toThrow()
+  })
+
+  it('rejects NaN numeric fields', () => {
+    expect(() => whisperSettingsSchema.parse({ ...validSettings, entropyThold: NaN })).toThrow()
   })
 })
