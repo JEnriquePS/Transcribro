@@ -3,7 +3,13 @@
  * These are the single source of truth for runtime validation at the IPC boundary.
  */
 import { z } from 'zod'
-import { JOB_ID_REGEX, DOWNLOAD_FORMATS, DEFAULT_MODEL, DEFAULT_LANGUAGE } from './constants'
+import {
+  JOB_ID_REGEX,
+  DOWNLOAD_FORMATS,
+  DEFAULT_MODEL,
+  DEFAULT_LANGUAGE,
+  WHISPER_LIMITS,
+} from './constants'
 
 // ── Primitives ────────────────────────────────────────────────────────────────
 
@@ -18,6 +24,24 @@ export const transcriptionConfigSchema = z.object({
   language: z.string().min(1).default(DEFAULT_LANGUAGE),
   threads: z.number().int().positive().optional(),
 })
+
+/** Full whisper configuration persisted in settings — editable from the Settings page. */
+export const whisperSettingsSchema = z.object({
+  defaultModel:    z.string().min(1),
+  defaultLanguage: z.string().min(1),
+  threads: z.number().int()
+    .min(WHISPER_LIMITS.threads.min).max(WHISPER_LIMITS.threads.max),
+  noSpeechThold: z.number()
+    .min(WHISPER_LIMITS.noSpeechThold.min).max(WHISPER_LIMITS.noSpeechThold.max),
+  entropyThold: z.number()
+    .min(WHISPER_LIMITS.entropyThold.min).max(WHISPER_LIMITS.entropyThold.max),
+  logprobThold: z.number()
+    .min(WHISPER_LIMITS.logprobThold.min).max(WHISPER_LIMITS.logprobThold.max),
+  maxContext: z.number().int()
+    .min(WHISPER_LIMITS.maxContext.min).max(WHISPER_LIMITS.maxContext.max),
+})
+
+export type WhisperSettings = z.infer<typeof whisperSettingsSchema>
 
 export const createJobInputSchema = z.object({
   /** Absolute path to the media file on disk (selected via native dialog). */

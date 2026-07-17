@@ -19,6 +19,7 @@ import type {
   DeleteFolderInput,
   MoveJobToFolderInput,
   ListJobsInput,
+  WhisperSettings,
 } from './schemas'
 import type {
   JobMetadata,
@@ -52,6 +53,11 @@ export const IPC = {
   MODELS_CANCEL_DOWNLOAD:  'models:cancelDownload',
   MODELS_DELETE:           'models:delete',
   MODELS_STATUS:           'models:status',
+
+  // ── Settings (invoke: renderer → main) ──
+  SETTINGS_GET:            'settings:get',
+  SETTINGS_UPDATE:         'settings:update',
+  SETTINGS_RESET:          'settings:reset',
 
   // ── App (invoke: renderer → main) ──
   APP_HEALTH:              'app:health',
@@ -147,6 +153,18 @@ export interface IpcMap {
   [IPC.MODELS_STATUS]: {
     input: { name: string }
     output: { status: string; sizeMb?: number; progressMb?: number }
+  }
+  [IPC.SETTINGS_GET]: {
+    input: void
+    output: WhisperSettings
+  }
+  [IPC.SETTINGS_UPDATE]: {
+    input: WhisperSettings
+    output: WhisperSettings
+  }
+  [IPC.SETTINGS_RESET]: {
+    input: void
+    output: WhisperSettings
   }
   [IPC.APP_HEALTH]: {
     input: void

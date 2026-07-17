@@ -34,6 +34,16 @@ export const WHISPER_DEFAULTS = {
   maxContext: 0,
 } as const
 
+/** Valid ranges for user-configurable whisper parameters (Zod validation + Settings UI). */
+export const WHISPER_LIMITS = {
+  threads:       { min: 1,   max: 32 },
+  noSpeechThold: { min: 0,   max: 1 },
+  entropyThold:  { min: 0,   max: 10 },
+  logprobThold:  { min: -20, max: 0 },
+  /** -1 = model maximum (224 tokens); 0 = disabled. */
+  maxContext:    { min: -1,  max: 224 },
+} as const
+
 export const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024 // 2 GB
 
 export const JOB_ID_REGEX = /^[a-f0-9]{32}$/
