@@ -1,5 +1,5 @@
 import { NavLink, Route, Routes } from 'react-router-dom'
-import { Upload, List, HardDrive } from 'lucide-react'
+import { Upload, List, HardDrive, Settings } from 'lucide-react'
 import { Toaster } from 'sonner'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { ThemeToggle } from './components/ThemeToggle'
@@ -8,6 +8,7 @@ import { UploadPage } from './pages/UploadPage'
 import { JobsPage } from './pages/JobsPage'
 import { JobDetailPage } from './pages/JobDetailPage'
 import { ModelsPage } from './pages/ModelsPage'
+import { SettingsPage } from './pages/SettingsPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 
 function navLinkClass({ isActive }: { isActive: boolean }): string {
@@ -51,6 +52,10 @@ export function App() {
                 <HardDrive size={14} />
                 Models
               </NavLink>
+              <NavLink to="/settings" className={navLinkClass}>
+                <Settings size={14} />
+                Settings
+              </NavLink>
             </nav>
             <ThemeToggle />
           </div>
@@ -66,6 +71,7 @@ export function App() {
             <Route path="/upload" element={<UploadPage />} />
             <Route path="/jobs/:id" element={<JobDetailPage />} />
             <Route path="/models" element={<ModelsPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </ErrorBoundary>
