@@ -1,6 +1,6 @@
 {
   "name": "transcribro",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Local-first transcription app powered by whisper.cpp",
   "main": "dist-electron/main.js",
   "private": true,
