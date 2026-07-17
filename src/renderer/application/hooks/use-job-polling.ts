@@ -45,6 +45,7 @@ export function useJobPolling(jobId: string, enabled: boolean): UseJobPollingRes
   useEffect(() => {
     if (!enabled || !jobId) return
     mountedRef.current = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets loading state when jobId/enabled changes
     setIsLoading(true)
     fetchJob()
 
@@ -132,6 +133,7 @@ export function useJobsPolling(
   useEffect(() => {
     if (!enabled) return
     mountedRef.current = true
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- resets loading state when filters change
     setIsLoading(true)
     fetchJobs()
 

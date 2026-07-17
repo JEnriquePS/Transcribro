@@ -16,6 +16,7 @@ const _SEGMENT_RE =
   /^\[(\d{2}):(\d{2}):(\d{2})\.(\d{3})\s*-->\s*(\d{2}):(\d{2}):(\d{2})\.(\d{3})\]\s*(.+)/
 
 // Strip ANSI color codes from whisper.cpp output
+// eslint-disable-next-line no-control-regex -- \x1b (ESC) is the actual ANSI escape byte
 const _ANSI_RE = /\x1b\[[0-9;]*m/g
 
 /** 5 minutes — matches Python's _READLINE_TIMEOUT */
