@@ -43,6 +43,7 @@ export const IPC = {
   JOBS_RETRY:              'jobs:retry',
   JOBS_DOWNLOAD:           'jobs:download',
   JOBS_PARTIAL_TRANSCRIPT: 'jobs:partialTranscript',
+  JOBS_DELETE_MEDIA:       'jobs:deleteMedia',
 
   // ── Models (invoke: renderer → main) ──
   MODELS_LIST:             'models:list',
@@ -118,6 +119,10 @@ export interface IpcMap {
   [IPC.JOBS_PARTIAL_TRANSCRIPT]: {
     input: { jobId: string }
     output: { segments: { start: number; end: number; text: string }[]; text: string }
+  }
+  [IPC.JOBS_DELETE_MEDIA]: {
+    input: { jobId: string; kind: 'original' | 'extracted' }
+    output: void
   }
   [IPC.MODELS_LIST]: {
     input: void

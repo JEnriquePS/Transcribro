@@ -69,6 +69,9 @@ export const ipc = {
   getPartialTranscript: (jobId: string) =>
     invoke(IPC.JOBS_PARTIAL_TRANSCRIPT, { jobId }),
 
+  deleteJobMedia: (jobId: string, kind: 'original' | 'extracted') =>
+    invoke(IPC.JOBS_DELETE_MEDIA, { jobId, kind }),
+
   moveJobToFolder: (jobId: string, folderId: string | null) =>
     invoke(IPC.JOBS_MOVE_TO_FOLDER, { jobId, folderId }),
 

@@ -217,6 +217,22 @@ export class DrizzleJobRepository {
     return fs.existsSync(file) ? file : null
   }
 
+  /**
+   * Delete the original media file (`input.<ext>`) to reclaim disk space.
+   * Transcript files and the DB row are left untouched. Only safe once the
+   * job is COMPLETED — earlier stages (and retry) still need this file.
+   */
+  deleteInputFile(jobId: string): void {
+    const input = this.getInputFile(jobId)
+    if (input) fs.rmSync(input, { force: true })
+  }
+
+  /** Delete the extracted 16kHz mono audio (`audio.wav`) to reclaim disk space. */
+  deleteExtractedAudioFile(jobId: string): void {
+    const audio = this.getExtractedAudioFile(jobId)
+    if (audio) fs.rmSync(audio, { force: true })
+  }
+
   getOutputFile(jobId: string, fmt: string): string | null {
     const filename = FILE_MAP[fmt]
     if (!filename) throw new UnsupportedFormatError(fmt)

@@ -95,6 +95,11 @@ export const jobDeleteInputSchema = z.object({
   jobId: jobIdSchema,
 })
 
+export const deleteJobMediaInputSchema = z.object({
+  jobId: jobIdSchema,
+  kind: z.enum(['original', 'extracted']),
+})
+
 export const modelSetDefaultInputSchema = z.object({
   name: z.string().min(1),
 })

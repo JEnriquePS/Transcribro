@@ -12,6 +12,7 @@ import {
   retryJobInputSchema,
   downloadInputSchema,
   moveJobToFolderInputSchema,
+  deleteJobMediaInputSchema,
   jobIdSchema,
 } from '../../../../shared/schemas'
 import { JobStatus } from '../../../../shared/types'
@@ -120,5 +121,21 @@ export function registerJobHandlers(
     }
     const content = fs.readFileSync(filePath, 'utf-8')
     return { content }
+  })
+
+  // Delete the original media (input.<ext>) or the extracted audio (audio.wav)
+  // independently, to reclaim disk space. Transcript files and the DB row are
+  // kept. Only allowed once COMPLETED — earlier stages and retry still need these files.
+  handleIpc(IPC.JOBS_DELETE_MEDIA, deleteJobMediaInputSchema, (input) => {
+    const existing = repo.get(input.jobId)
+    if (!existing) throw new JobNotFoundError(input.jobId)
+    if (existing.status !== JobStatus.COMPLETED) {
+      throw new Error('Media can only be deleted once the job is completed')
+    }
+    if (input.kind === 'original') {
+      repo.deleteInputFile(input.jobId)
+    } else {
+      repo.deleteExtractedAudioFile(input.jobId)
+    }
   })
 }
