@@ -51,7 +51,7 @@ export function UploadPage() {
         navigate(`/jobs/${job.id}`)
       } else {
         await ipc.createBatch(filePaths, apiConfig)
-        navigate('/jobs')
+        navigate('/')
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : 'No se pudo iniciar la transcripción'

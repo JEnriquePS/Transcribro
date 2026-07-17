@@ -99,7 +99,6 @@ export function JobsPage() {
   }, [loadFolders])
 
   // ── Jobs state ──────────────────────────────────────────────────────────────
-  const { jobs, isLoading, error } = useJobsPolling(true, selectedFolderId)
   const [deleting, setDeleting] = useState<string | null>(null)
   const [jobToDelete, setJobToDelete] = useState<string | null>(null)
   const [deletingFolderId, setDeletingFolderId] = useState<string | null>(null)
@@ -108,9 +107,18 @@ export function JobsPage() {
   const [sortField, setSortField] = useState<SortField>('date')
   const [filter, setFilter] = useState<FilterStatus>('all')
   const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [nameOverrides, setNameOverrides] = useState<Record<string, string>>({})
+
+  // Debounce the search box before hitting the DB (it now matches full transcript text too)
+  useEffect(() => {
+    const t = setTimeout(() => setDebouncedSearch(search.trim()), 300)
+    return () => clearTimeout(t)
+  }, [search])
+
+  const { jobs, isLoading, error } = useJobsPolling(true, selectedFolderId, debouncedSearch)
 
   const hasActiveFilters = filter !== 'all' || search.trim() !== '' || dateFrom !== '' || dateTo !== ''
 
@@ -253,16 +261,12 @@ export function JobsPage() {
       : `Se eliminará la carpeta "${folderToDelete.name}". Los trabajos dentro quedarán sin carpeta. Esta acción no se puede deshacer.`
     : ''
 
+  // Name + transcript-content search now happens server-side (DrizzleJobRepository.list),
+  // so this only applies the status/date filters that remain client-only.
   const filtered = jobsWithOverrides.filter((job) => {
     if (filter === 'active' && !ACTIVE_STATUSES.has(job.status)) return false
     if (filter === 'completed' && job.status !== JobStatus.COMPLETED) return false
     if (filter === 'failed' && job.status !== JobStatus.FAILED) return false
-
-    if (search.trim() !== '') {
-      const query = search.trim().toLowerCase()
-      const name = (job.displayName ?? job.originalFilename).toLowerCase()
-      if (!name.includes(query)) return false
-    }
 
     // createdAt is a full ISO timestamp; compare only the date portion so
     // "Hasta" includes the entire selected day, not just its midnight instant.
@@ -386,14 +390,14 @@ export function JobsPage() {
               className="absolute left-2.5 top-1/2 -translate-y-1/2 text-text-secondary pointer-events-none"
             />
             <label htmlFor="jobs-search" className="sr-only">
-              Buscar transcripciones y carpetas por nombre
+              Buscar por nombre, carpeta o contenido de la transcripción
             </label>
             <input
               id="jobs-search"
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder="Buscar transcripciones y carpetas..."
+              placeholder="Buscar por nombre o dentro de la transcripción..."
               className="w-full bg-surface-elevated border border-border-default rounded pl-8 pr-8 py-1.5 text-sm text-text-primary placeholder:text-text-secondary focus:outline-none focus:ring-2 focus:ring-accent"
             />
             {search !== '' && (
@@ -495,13 +499,23 @@ export function JobsPage() {
           <div className="flex flex-col items-center justify-center py-16 text-text-secondary">
             <Inbox size={40} className="mb-3" />
             <p className="text-sm">
-              {selectedFolderId === null
-                ? 'No hay trabajos sin carpeta'
-                : selectedFolderId !== undefined
-                  ? 'Esta carpeta no tiene transcripciones directas'
-                  : 'No transcriptions yet'}
+              {debouncedSearch !== ''
+                ? 'Ninguna transcripción coincide con tu búsqueda'
+                : selectedFolderId === null
+                  ? 'No hay trabajos sin carpeta'
+                  : selectedFolderId !== undefined
+                    ? 'Esta carpeta no tiene transcripciones directas'
+                    : 'No transcriptions yet'}
             </p>
-            {selectedFolderId === undefined && (
+            {debouncedSearch !== '' ? (
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="mt-3 text-sm text-accent-text hover:text-accent-text transition-colors focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-surface rounded"
+              >
+                Limpiar búsqueda
+              </button>
+            ) : selectedFolderId === undefined && (
               <button
                 type="button"
                 onClick={() => navigate('/upload')}

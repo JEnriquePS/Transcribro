@@ -1,4 +1,5 @@
-import { Check } from 'lucide-react'
+import { useState } from 'react'
+import { Check, ChevronDown, ChevronUp } from 'lucide-react'
 import { JobStatus, type JobMetadata } from '../../../shared/types'
 
 interface StageConfig {
@@ -41,66 +42,83 @@ export function ProgressBar({ metadata }: ProgressBarProps) {
   const overallPct = Math.round(progress * 100)
   const isFailed = status === JobStatus.FAILED
   const isCompleted = status === JobStatus.COMPLETED
+  // Expanded by default while there's something to watch; collapsed once done —
+  // always overridable by the user via the toggle below.
+  const [expanded, setExpanded] = useState(!isCompleted && !isFailed)
 
   return (
     <div className="space-y-2">
-      {STAGES.map((stage, i) => {
-        const stageProgress = metadata[stage.key]
-        const pct = Math.round(stageProgress * 100)
-        const isActive = status === stage.activeStatus
-        const isDone = stageProgress >= 1.0
-        const isPending = i > currentIndex && !isCompleted
-        const isFailedStage = isFailed && isActive
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        aria-label={expanded ? 'Ocultar progreso' : 'Mostrar progreso'}
+        className="flex items-center justify-center w-full text-text-secondary hover:text-text-primary transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent rounded"
+      >
+        {expanded ? <ChevronUp size={14} aria-hidden="true" /> : <ChevronDown size={14} aria-hidden="true" />}
+      </button>
 
-        let barColor = 'bg-surface-elevated'
-        let labelColor = 'text-text-muted'
-        let pctText = '\u2014'
+      {expanded && (
+      <>
+      <div className="flex items-start gap-3">
+        {STAGES.map((stage, i) => {
+          const stageProgress = metadata[stage.key]
+          const pct = Math.round(stageProgress * 100)
+          const isActive = status === stage.activeStatus
+          const isDone = stageProgress >= 1.0
+          const isPending = i > currentIndex && !isCompleted
+          const isFailedStage = isFailed && isActive
 
-        if (isCompleted || isDone) {
-          barColor = 'bg-accent'
-          labelColor = 'text-text-secondary'
-          pctText = ''
-        } else if (isFailedStage) {
-          barColor = 'bg-error'
-          labelColor = 'text-error'
-          pctText = `${pct}%`
-        } else if (isActive) {
-          barColor = 'bg-accent'
-          labelColor = 'text-accent-text'
-          pctText = `${pct}%`
-        } else if (isPending) {
-          labelColor = 'text-text-muted'
-          pctText = '\u2014'
-        }
+          let barColor = 'bg-surface-elevated'
+          let labelColor = 'text-text-muted'
+          let pctText = '\u2014'
 
-        return (
-          <div key={stage.key} className="flex items-center gap-3">
-            <span className={`text-xs w-28 shrink-0 ${labelColor}`}>
-              {stage.label}
-            </span>
-            <div
-              className="flex-1 bg-surface-elevated rounded-full h-2"
-              role="progressbar"
-              aria-valuenow={pct}
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-label={stage.label}
-            >
+          if (isCompleted || isDone) {
+            barColor = 'bg-accent'
+            labelColor = 'text-text-secondary'
+            pctText = ''
+          } else if (isFailedStage) {
+            barColor = 'bg-error'
+            labelColor = 'text-error'
+            pctText = `${pct}%`
+          } else if (isActive) {
+            barColor = 'bg-accent'
+            labelColor = 'text-accent-text'
+            pctText = `${pct}%`
+          } else if (isPending) {
+            labelColor = 'text-text-muted'
+            pctText = '\u2014'
+          }
+
+          return (
+            <div key={stage.key} className="flex-1 min-w-0 space-y-1">
+              <div className="flex items-center justify-between gap-1">
+                <span className={`text-[11px] truncate ${labelColor}`}>
+                  {stage.label}
+                </span>
+                {isDone || isCompleted ? (
+                  <Check size={12} className="text-accent-text shrink-0" />
+                ) : (
+                  <span className={`text-[11px] font-mono shrink-0 ${labelColor}`}>{pctText}</span>
+                )}
+              </div>
               <div
-                className={`h-2 rounded-full transition-all duration-500 ${barColor}`}
-                style={{ width: `${pct}%` }}
-              />
+                className="bg-surface-elevated rounded-full h-1.5"
+                role="progressbar"
+                aria-valuenow={pct}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={stage.label}
+              >
+                <div
+                  className={`h-1.5 rounded-full transition-all duration-500 ${barColor}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
             </div>
-            <span className="w-10 text-right shrink-0">
-              {isDone || isCompleted ? (
-                <Check size={14} className="inline text-accent-text" />
-              ) : (
-                <span className={`text-xs font-mono ${labelColor}`}>{pctText}</span>
-              )}
-            </span>
-          </div>
-        )
-      })}
+          )
+        })}
+      </div>
 
       {/* Overall + duration */}
       <div className="flex items-center justify-between pt-1 border-t border-border-subtle">
@@ -118,6 +136,8 @@ export function ProgressBar({ metadata }: ProgressBarProps) {
           </span>
         )}
       </div>
+      </>
+      )}
     </div>
   )
 }

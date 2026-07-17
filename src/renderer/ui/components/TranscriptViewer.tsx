@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { List, Copy, Check, Loader2, FileText, Braces, Captions, Globe, Download } from 'lucide-react'
 import { ipc } from '../../infrastructure/ipc-client'
 import { toast } from 'sonner'
@@ -32,14 +32,23 @@ function formatTimestamp(seconds: number): string {
 interface TranscriptViewerProps {
   readonly jobId: string
   readonly result: TranscriptResult
+  readonly onSeek?: (seconds: number) => void
+  readonly activeSegmentIndex?: number | null
 }
 
-export function TranscriptViewer({ jobId, result }: TranscriptViewerProps) {
+export function TranscriptViewer({ jobId, result, onSeek, activeSegmentIndex }: TranscriptViewerProps) {
   const [tab, setTab] = useState<Tab>('segments')
   const [previews, setPreviews] = useState<Partial<Record<Tab, string>>>({})
   const [loadingPreview, setLoadingPreview] = useState(false)
   const [copied, setCopied] = useState(false)
   const [downloading, setDownloading] = useState(false)
+  const activeRowRef = useRef<HTMLElement>(null)
+
+  useEffect(() => {
+    if (tab === 'segments') {
+      activeRowRef.current?.scrollIntoView({ block: 'center', behavior: 'smooth' })
+    }
+  }, [activeSegmentIndex, tab])
 
   const fetchPreview = useCallback(
     async (format: Tab) => {
@@ -146,14 +155,39 @@ export function TranscriptViewer({ jobId, result }: TranscriptViewerProps) {
           </div>
         ) : tab === 'segments' ? (
           <div className="space-y-1">
-            {result.segments.map((s, i) => (
-              <div key={i} className="flex gap-3 text-sm">
-                <span className="font-mono text-accent-text text-xs shrink-0 pt-0.5">
-                  [{formatTimestamp(s.start)}]
-                </span>
-                <span className="text-text-primary">{s.text}</span>
-              </div>
-            ))}
+            {result.segments.map((s, i) => {
+              const isActive = i === activeSegmentIndex
+              const rowClass = `flex gap-3 text-sm rounded px-1 -mx-1 py-0.5 transition-colors ${
+                isActive ? 'bg-accent-text/10' : ''
+              }`
+              return onSeek ? (
+                <button
+                  key={i}
+                  ref={isActive ? (activeRowRef as React.RefObject<HTMLButtonElement>) : undefined}
+                  type="button"
+                  onClick={() => onSeek(s.start)}
+                  aria-label={`Ir a ${formatTimestamp(s.start)}`}
+                  aria-current={isActive ? 'true' : undefined}
+                  className={`${rowClass} text-left w-full hover:bg-surface-elevated cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent`}
+                >
+                  <span className="font-mono text-accent-text text-xs shrink-0 pt-0.5">
+                    [{formatTimestamp(s.start)}]
+                  </span>
+                  <span className="text-text-primary">{s.text}</span>
+                </button>
+              ) : (
+                <div
+                  key={i}
+                  ref={isActive ? (activeRowRef as React.RefObject<HTMLDivElement>) : undefined}
+                  className={rowClass}
+                >
+                  <span className="font-mono text-accent-text text-xs shrink-0 pt-0.5">
+                    [{formatTimestamp(s.start)}]
+                  </span>
+                  <span className="text-text-primary">{s.text}</span>
+                </div>
+              )
+            })}
           </div>
         ) : (
           <pre className="text-xs text-text-primary whitespace-pre-wrap font-mono">{currentContent}</pre>
