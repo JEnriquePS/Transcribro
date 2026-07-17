@@ -28,11 +28,14 @@ function getResourcePath(relativePath: string): string {
   return path.join(__dirname, '../resources', relativePath)
 }
 
+// Windows executables carry the .exe extension; spawn() needs the exact filename.
+const EXE = process.platform === 'win32' ? '.exe' : ''
+
 export const config = {
   // ── Binary paths (platform-specific) ────────────────────────────────────────
-  whisperCliPath: getResourcePath('bin/whisper-cli'),
-  ffmpegPath:     getResourcePath('bin/ffmpeg'),
-  ffprobePath:    getResourcePath('bin/ffprobe'),
+  whisperCliPath: getResourcePath(`bin/whisper-cli${EXE}`),
+  ffmpegPath:     getResourcePath(`bin/ffmpeg${EXE}`),
+  ffprobePath:    getResourcePath(`bin/ffprobe${EXE}`),
 
   // ── User-data paths ──────────────────────────────────────────────────────────
   modelsDir:   path.join(app.getPath('userData'), 'models'),

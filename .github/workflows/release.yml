@@ -1,0 +1,158 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  mac-arm64:
+    name: macOS (arm64)
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+
+      - name: Build whisper.cpp (Metal)
+        run: |
+          git clone --depth 1 https://github.com/ggerganov/whisper.cpp
+          cmake -B whisper.cpp/build -S whisper.cpp -DWHISPER_METAL=ON -DCMAKE_BUILD_TYPE=Release
+          cmake --build whisper.cpp/build -j --config Release
+
+      - name: Bundle binaries
+        run: |
+          brew install ffmpeg
+          mkdir -p resources/bin/darwin-arm64
+          cp whisper.cpp/build/bin/whisper-cli resources/bin/darwin-arm64/
+          cp "$(command -v ffmpeg)" resources/bin/darwin-arm64/
+          cp "$(command -v ffprobe)" resources/bin/darwin-arm64/
+          chmod +x resources/bin/darwin-arm64/*
+
+      - name: Build app
+        run: npm run build
+
+      - name: Package and publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --mac --arm64 --publish always
+
+  mac-x64:
+    name: macOS (x64)
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+
+      - name: Build whisper.cpp (Metal)
+        run: |
+          git clone --depth 1 https://github.com/ggerganov/whisper.cpp
+          cmake -B whisper.cpp/build -S whisper.cpp -DWHISPER_METAL=ON -DCMAKE_BUILD_TYPE=Release
+          cmake --build whisper.cpp/build -j --config Release
+
+      - name: Bundle binaries
+        run: |
+          brew install ffmpeg
+          mkdir -p resources/bin/darwin-x64
+          cp whisper.cpp/build/bin/whisper-cli resources/bin/darwin-x64/
+          cp "$(command -v ffmpeg)" resources/bin/darwin-x64/
+          cp "$(command -v ffprobe)" resources/bin/darwin-x64/
+          chmod +x resources/bin/darwin-x64/*
+
+      - name: Build app
+        run: npm run build
+
+      - name: Package and publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --mac --x64 --publish always
+
+  windows:
+    name: Windows (x64)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+
+      - name: Build whisper.cpp (CPU)
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/ggerganov/whisper.cpp
+          cmake -B whisper.cpp/build -S whisper.cpp -DCMAKE_BUILD_TYPE=Release
+          cmake --build whisper.cpp/build -j --config Release
+
+      - name: Download static ffmpeg/ffprobe
+        shell: bash
+        run: |
+          curl -L -o ffmpeg.zip https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-win64-gpl.zip
+          unzip -q ffmpeg.zip
+
+      - name: Bundle binaries
+        shell: bash
+        run: |
+          mkdir -p resources/bin/win32-x64
+          cp "$(find whisper.cpp/build -iname whisper-cli.exe | head -1)" resources/bin/win32-x64/
+          FFDIR=$(find . -maxdepth 1 -iname "ffmpeg-*-win64-gpl" -type d | head -1)
+          cp "$FFDIR/bin/ffmpeg.exe"  resources/bin/win32-x64/
+          cp "$FFDIR/bin/ffprobe.exe" resources/bin/win32-x64/
+
+      - name: Build app
+        run: npm run build
+
+      - name: Package and publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --win --x64 --publish always
+
+  linux:
+    name: Linux (x64)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+      - run: npm ci
+
+      - name: Build whisper.cpp (CPU)
+        run: |
+          git clone --depth 1 https://github.com/ggerganov/whisper.cpp
+          cmake -B whisper.cpp/build -S whisper.cpp -DCMAKE_BUILD_TYPE=Release
+          cmake --build whisper.cpp/build -j
+
+      - name: Download static ffmpeg/ffprobe
+        run: |
+          curl -L -o ffmpeg.tar.xz https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-linux64-gpl.tar.xz
+          tar xf ffmpeg.tar.xz
+
+      - name: Bundle binaries
+        run: |
+          mkdir -p resources/bin/linux-x64
+          cp whisper.cpp/build/bin/whisper-cli resources/bin/linux-x64/
+          FFDIR=$(find . -maxdepth 1 -iname "ffmpeg-*-linux64-gpl" -type d | head -1)
+          cp "$FFDIR/bin/ffmpeg"  resources/bin/linux-x64/
+          cp "$FFDIR/bin/ffprobe" resources/bin/linux-x64/
+          chmod +x resources/bin/linux-x64/*
+
+      - name: Build app
+        run: npm run build
+
+      - name: Package and publish
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --linux --x64 --publish always
