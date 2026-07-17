@@ -43,40 +43,6 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npx electron-builder --mac --arm64 --publish always
 
-  mac-x64:
-    name: macOS (x64)
-    runs-on: macos-13
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: "20"
-          cache: "npm"
-      - run: npm ci
-
-      - name: Build whisper.cpp (Metal)
-        run: |
-          git clone --depth 1 https://github.com/ggerganov/whisper.cpp
-          cmake -B whisper.cpp/build -S whisper.cpp -DWHISPER_METAL=ON -DCMAKE_BUILD_TYPE=Release
-          cmake --build whisper.cpp/build -j --config Release
-
-      - name: Bundle binaries
-        run: |
-          brew install ffmpeg
-          mkdir -p resources/bin/darwin-x64
-          cp whisper.cpp/build/bin/whisper-cli resources/bin/darwin-x64/
-          cp "$(command -v ffmpeg)" resources/bin/darwin-x64/
-          cp "$(command -v ffprobe)" resources/bin/darwin-x64/
-          chmod +x resources/bin/darwin-x64/*
-
-      - name: Build app
-        run: npm run build
-
-      - name: Package and publish
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --mac --x64 --publish always
-
   windows:
     name: Windows (x64)
     runs-on: windows-latest
