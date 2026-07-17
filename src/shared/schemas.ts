@@ -79,6 +79,8 @@ export const moveJobToFolderInputSchema = z.object({
 // undefined = all jobs, '__uncategorized__' = jobs with no folder, string = specific folder id
 export const listJobsInputSchema = paginationInputSchema.extend({
   folderId: z.union([folderIdSchema, z.literal('__uncategorized__')]).optional(),
+  // Matches job name OR full transcript text (completed jobs only)
+  search: z.string().max(200).optional(),
 })
 
 export type CreateFolderInput = z.infer<typeof createFolderInputSchema>

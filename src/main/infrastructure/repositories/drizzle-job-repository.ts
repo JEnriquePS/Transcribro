@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { eq, desc, count, isNull, isNotNull, inArray } from 'drizzle-orm'
+import { eq, desc, count, isNull, isNotNull, inArray, like, or, and } from 'drizzle-orm'
 import { jobs, transcriptSegments, transcriptResults } from '../db/schema'
 import type { Db } from '../db/client'
 import type { JobMetadata, TranscriptSegment, TranscriptResult } from '../../../shared/types'
@@ -118,19 +118,45 @@ export class DrizzleJobRepository {
   }
 
   /**
-   * List jobs with optional folder filter.
+   * List jobs with optional folder filter and full-text search.
    * - folderFilter === undefined     → all jobs (no WHERE clause)
    * - folderFilter === null          → uncategorized (WHERE folder_id IS NULL)
    * - folderFilter === string[]      → jobs in any of those folder IDs (WHERE folder_id IN (...))
    *                                    Pass [folderId, ...descendants] for recursive folder selection.
+   * - search                        → matches display name / original filename, OR the full
+   *                                    transcript text of completed jobs (transcript_results.full_text)
    */
-  list(limit = 50, offset = 0, folderFilter?: null | readonly string[]): { jobs: JobMetadata[]; total: number } {
-    const whereClause =
-      folderFilter === undefined
-        ? undefined
-        : folderFilter === null
-          ? isNull(jobs.folderId)
-          : inArray(jobs.folderId, folderFilter as string[])
+  list(
+    limit = 50,
+    offset = 0,
+    folderFilter?: null | readonly string[],
+    search?: string,
+  ): { jobs: JobMetadata[]; total: number } {
+    const conditions = []
+
+    if (folderFilter !== undefined) {
+      conditions.push(
+        folderFilter === null ? isNull(jobs.folderId) : inArray(jobs.folderId, folderFilter as string[]),
+      )
+    }
+
+    if (search && search.trim() !== '') {
+      const pattern = `%${search.trim()}%`
+      const matchingResultIds = this.db
+        .select({ jobId: transcriptResults.jobId })
+        .from(transcriptResults)
+        .where(like(transcriptResults.fullText, pattern))
+
+      conditions.push(
+        or(
+          like(jobs.displayName, pattern),
+          like(jobs.originalFilename, pattern),
+          inArray(jobs.id, matchingResultIds),
+        ),
+      )
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined
 
     const baseQuery = this.db.select().from(jobs)
     const countQuery = this.db.select({ value: count() }).from(jobs)

@@ -48,11 +48,11 @@ export function registerJobHandlers(
   // List jobs with optional folder filter (exact folder only — subfolders are browsed separately)
   handleIpc(IPC.JOBS_LIST, listJobsInputSchema, (input) => {
     if (input.folderId === '__uncategorized__') {
-      return repo.list(input.limit, input.offset, null)
+      return repo.list(input.limit, input.offset, null, input.search)
     } else if (input.folderId) {
-      return repo.list(input.limit, input.offset, [input.folderId])
+      return repo.list(input.limit, input.offset, [input.folderId], input.search)
     }
-    return repo.list(input.limit, input.offset, undefined)
+    return repo.list(input.limit, input.offset, undefined, input.search)
   })
 
   // Move job to a folder (or remove from folder when folderId is null)

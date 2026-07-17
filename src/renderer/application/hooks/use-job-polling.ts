@@ -105,7 +105,11 @@ interface UseJobsPollingResult {
   readonly error: string | null
 }
 
-export function useJobsPolling(enabled: boolean, folderId?: string | null): UseJobsPollingResult {
+export function useJobsPolling(
+  enabled: boolean,
+  folderId?: string | null,
+  search?: string,
+): UseJobsPollingResult {
   const [jobs, setJobs] = useState<readonly JobMetadata[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -114,7 +118,7 @@ export function useJobsPolling(enabled: boolean, folderId?: string | null): UseJ
   const fetchJobs = useCallback(async () => {
     if (!enabled) return
     try {
-      const data = await ipc.listJobs(100, 0, folderId)
+      const data = await ipc.listJobs(100, 0, folderId, search)
       if (!mountedRef.current) return
       setJobs(data.jobs)
       setIsLoading(false)
@@ -123,7 +127,7 @@ export function useJobsPolling(enabled: boolean, folderId?: string | null): UseJ
       setError(err instanceof Error ? err.message : 'Failed to load jobs')
       setIsLoading(false)
     }
-  }, [enabled, folderId])
+  }, [enabled, folderId, search])
 
   useEffect(() => {
     if (!enabled) return
@@ -154,7 +158,7 @@ export function useJobsPolling(enabled: boolean, folderId?: string | null): UseJ
       cleanupCompleted()
       cleanupFailed()
     }
-  }, [enabled, folderId, fetchJobs])
+  }, [enabled, folderId, search, fetchJobs])
 
   return { jobs, isLoading, error }
 }

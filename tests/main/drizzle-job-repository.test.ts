@@ -106,6 +106,51 @@ describe('DrizzleJobRepository', () => {
     expect(jobs).toHaveLength(2)
   })
 
+  it('search matches by original filename', () => {
+    repo.save(makeJob({ originalFilename: 'invoice-review.mp4' }))
+    const { jobs, total } = repo.list(50, 0, undefined, 'invoice')
+    expect(total).toBe(1)
+    expect(jobs[0].originalFilename).toBe('invoice-review.mp4')
+  })
+
+  it('search matches by display name', () => {
+    const job = makeJob()
+    repo.save(job)
+    repo.update(job.id, { displayName: 'Q3 planning session' })
+    const { jobs, total } = repo.list(50, 0, undefined, 'planning')
+    expect(total).toBe(1)
+    expect(jobs[0].id).toBe(job.id)
+  })
+
+  it('search matches inside the full transcript text', () => {
+    const id1 = 'd1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'
+    const id2 = 'e1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4'
+    repo.save(makeJob({ id: id1, originalFilename: 'meeting-1.mp4' }))
+    repo.save(makeJob({ id: id2, originalFilename: 'meeting-2.mp4' }))
+    repo.saveResult(
+      { jobId: id1, originalFilename: 'meeting-1.mp4', model: 'large-v3', language: 'es', fullText: 'hablamos del presupuesto anual', segments: [] },
+      '{}',
+    )
+    repo.saveResult(
+      { jobId: id2, originalFilename: 'meeting-2.mp4', model: 'large-v3', language: 'es', fullText: 'revisamos el roadmap del producto', segments: [] },
+      '{}',
+    )
+
+    const { jobs, total } = repo.list(50, 0, undefined, 'presupuesto')
+    expect(total).toBe(1)
+    expect(jobs[0].id).toBe(id1)
+  })
+
+  it('search combines with folder filter', () => {
+    const f = folderRepo.create('Work')
+    repo.save(makeJob({ originalFilename: 'budget-call.mp4', folderId: f.id }))
+    repo.save(makeJob({ id: 'f1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4', originalFilename: 'budget-call.mp4', folderId: null }))
+
+    const { jobs, total } = repo.list(50, 0, [f.id], 'budget')
+    expect(total).toBe(1)
+    expect(jobs[0].folderId).toBe(f.id)
+  })
+
   // ── update ─────────────────────────────────────────────────────────────────
 
   it('updates a job field', () => {
