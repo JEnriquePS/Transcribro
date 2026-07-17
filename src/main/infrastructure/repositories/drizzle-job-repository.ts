@@ -203,6 +203,20 @@ export class DrizzleJobRepository {
     return dest
   }
 
+  /** Resolve the copied original media file (`input.<ext>`) for a job, or null if missing. */
+  getInputFile(jobId: string): string | null {
+    const dir = this.jobDir(jobId)
+    if (!fs.existsSync(dir)) return null
+    const found = fs.readdirSync(dir).find((f) => path.parse(f).name === 'input')
+    return found ? path.join(dir, found) : null
+  }
+
+  /** Resolve the extracted 16kHz mono audio (`audio.wav`) for a job, or null if missing. */
+  getExtractedAudioFile(jobId: string): string | null {
+    const file = path.join(this.jobDir(jobId), 'audio.wav')
+    return fs.existsSync(file) ? file : null
+  }
+
   getOutputFile(jobId: string, fmt: string): string | null {
     const filename = FILE_MAP[fmt]
     if (!filename) throw new UnsupportedFormatError(fmt)

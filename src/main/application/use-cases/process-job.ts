@@ -95,10 +95,8 @@ export class ProcessJobUseCase {
 
       this.repo.update(jobId, { startedAt: nowIso() })
 
-      // Find input file (named `input.<ext>`)
-      const inputFile = fs.readdirSync(jobDir).find((f) => path.parse(f).name === 'input')
-      if (!inputFile) throw new Error('No input file found in job directory')
-      const inputPath = path.join(jobDir, inputFile)
+      const inputPath = this.repo.getInputFile(jobId)
+      if (!inputPath) throw new Error('No input file found in job directory')
       const audioPath = path.join(jobDir, 'audio.wav')
 
       // Determine if this is a resume (extraction already done, has offset)

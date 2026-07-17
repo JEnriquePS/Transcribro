@@ -57,6 +57,7 @@ export const IPC = {
   APP_SELECT_FILES:        'app:selectFiles',
   APP_REVEAL_FILE:         'app:revealFile',
   APP_SAVE_FILE:           'app:saveFile',
+  APP_GET_MEDIA_PORT:      'app:getMediaPort',
 
   // ── Jobs (extra helpers) ──
   JOBS_GET_FILE_CONTENT:   'jobs:getFileContent',
@@ -157,6 +158,11 @@ export interface IpcMap {
   [IPC.APP_SAVE_FILE]: {
     input: { sourcePath: string; defaultName: string }
     output: { saved: boolean }
+  }
+  [IPC.APP_GET_MEDIA_PORT]: {
+    input: void
+    // Port of the loopback HTTP server serving job media for <video>/<audio> playback
+    output: { port: number }
   }
   [IPC.JOBS_GET_FILE_CONTENT]: {
     input: { jobId: string; format: string }

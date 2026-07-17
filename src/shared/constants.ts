@@ -8,6 +8,9 @@ export const ALLOWED_EXTENSIONS = new Set([
   '.mp3', '.wav', '.flac', '.ogg', '.m4a',
 ])
 
+/** Audio-only extensions — used to pick an <audio> vs <video> player element. */
+export const AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.flac', '.ogg', '.m4a'])
+
 export const KNOWN_MODELS = [
   { name: 'large-v3', sizeMb: 3094 },
   { name: 'medium',   sizeMb: 1533 },

@@ -9,6 +9,7 @@ import { handleIpc } from '../ipc-wrapper'
 export function registerAppHandlers(
   ffmpegPath: string,
   whisperCliPath: string,
+  mediaPort: number,
 ): void {
   // Health check — verify required binaries are present
   handleIpc(IPC.APP_HEALTH, null, () => {
@@ -51,6 +52,11 @@ export function registerAppHandlers(
     if (result.canceled || !result.filePath) return { saved: false }
     fs.copyFileSync(sourcePath, result.filePath)
     return { saved: true }
+  })
+
+  // Port of the loopback HTTP server serving job media for playback
+  handleIpc(IPC.APP_GET_MEDIA_PORT, null, () => {
+    return { port: mediaPort }
   })
 }
 

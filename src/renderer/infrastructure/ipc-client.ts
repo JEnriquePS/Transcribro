@@ -114,6 +114,9 @@ export const ipc = {
   saveFile: (sourcePath: string, defaultName: string) =>
     invoke(IPC.APP_SAVE_FILE, { sourcePath, defaultName }),
 
+  getMediaPort: () =>
+    invoke(IPC.APP_GET_MEDIA_PORT),
+
   // Push event subscriptions
   onJobProgress: (listener: (e: IpcMap[typeof IPC.JOB_PROGRESS]['output']) => void) =>
     on(IPC.JOB_PROGRESS, listener),

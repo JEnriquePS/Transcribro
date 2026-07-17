@@ -6,6 +6,7 @@ import { runMigrations } from './infrastructure/db/migrate'
 import { migrateLegacyData } from './infrastructure/db/legacy-migration'
 import { createCompositionRoot } from './infrastructure/composition-root'
 import { registerAllHandlers } from './infrastructure/ipc/register'
+import { startMediaServer } from './infrastructure/services/media-server'
 
 // Override the binary name shown in the menu bar / app switcher during dev.
 // In production electron-builder sets this via productName in the .app bundle.
@@ -69,13 +70,16 @@ app.whenReady().then(async () => {
   // 2. Wire concrete implementations (must be after initDb)
   const root = createCompositionRoot()
 
+  // Loopback-only HTTP server serving job media (input.<ext>) for <video>/<audio> playback
+  const mediaPort = await startMediaServer(root.repo)
+
   // 3. One-time legacy data migration (filesystem JSON → SQLite)
   //    Guarded by electron-store flag — no-op after first run
   const legacyJobsDir = path.join(app.getAppPath(), '..', '..', 'data', 'jobs')
   await migrateLegacyData(legacyJobsDir, root.repo, config.jobFilesDir)
 
   // 4. Register all IPC handlers
-  registerAllHandlers(root)
+  registerAllHandlers(root, mediaPort)
 
   // 5. Create window and bind it to the composition root for push events
   const win = createWindow()
