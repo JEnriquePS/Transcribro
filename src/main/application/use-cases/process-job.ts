@@ -10,6 +10,7 @@ import type { WhisperTranscriber } from '../../infrastructure/services/whisper-t
 import type { WhisperFormatter } from '../../infrastructure/services/whisper-formatter'
 
 export type SendEventFn = (channel: string, payload: unknown) => void
+export type NotifyFn = (title: string, body: string) => void
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -51,6 +52,7 @@ export class ProcessJobUseCase {
     private readonly formatter: WhisperFormatter,
     private readonly defaultThreads: number,
     private readonly sendEvent: SendEventFn,
+    private readonly notify: NotifyFn,
   ) {}
 
   private makeStageCallback(
@@ -194,6 +196,7 @@ export class ProcessJobUseCase {
       })
 
       this.sendEvent(IPC.JOB_COMPLETED, { jobId, metadata: final })
+      this.notify('Transcripción completada', metadata.originalFilename)
       return final
     } catch (exc) {
       console.error(`[process-job] Job ${jobId} failed:`, exc)
@@ -230,6 +233,7 @@ export class ProcessJobUseCase {
       })
 
       this.sendEvent(IPC.JOB_FAILED, { jobId, error: safeError })
+      this.notify('Transcripción fallida', current?.originalFilename ?? safeError)
       return failed
     }
   }

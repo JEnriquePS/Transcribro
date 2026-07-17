@@ -1,3 +1,4 @@
+import { Notification } from 'electron'
 import type { BrowserWindow } from 'electron'
 import { getDb } from './db/client'
 import { config } from '../config'
@@ -24,6 +25,12 @@ export function createCompositionRoot() {
   function sendEvent(channel: string, payload: unknown): void {
     if (mainWindow && !mainWindow.isDestroyed()) {
       mainWindow.webContents.send(channel, payload)
+    }
+  }
+
+  function notify(title: string, body: string): void {
+    if (Notification.isSupported()) {
+      new Notification({ title, body }).show()
     }
   }
 
@@ -56,6 +63,7 @@ export function createCompositionRoot() {
     formatter,
     config.whisperThreads,
     sendEvent,
+    notify,
   )
 
   const retryJobUc = new RetryJobUseCase(repo)
