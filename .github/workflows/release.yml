@@ -64,7 +64,7 @@ jobs:
       - name: Download static ffmpeg/ffprobe
         shell: bash
         run: |
-          curl -L -o ffmpeg.zip https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-win64-gpl.zip
+          curl -L -f -o ffmpeg.zip https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip
           unzip -q ffmpeg.zip
 
       - name: Bundle binaries
@@ -103,7 +103,7 @@ jobs:
 
       - name: Download static ffmpeg/ffprobe
         run: |
-          curl -L -o ffmpeg.tar.xz https://github.com/BtbN/FFmpeg-Builds/releases/latest/download/ffmpeg-master-latest-linux64-gpl.tar.xz
+          curl -L -f -o ffmpeg.tar.xz https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-linux64-gpl.tar.xz
           tar xf ffmpeg.tar.xz
 
       - name: Bundle binaries
