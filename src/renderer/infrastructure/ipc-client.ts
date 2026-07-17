@@ -108,6 +108,16 @@ export const ipc = {
   getModelStatus: (name: string) =>
     invoke(IPC.MODELS_STATUS, { name }),
 
+  // Settings
+  getSettings: () =>
+    invoke(IPC.SETTINGS_GET),
+
+  updateSettings: (settings: IpcMap[typeof IPC.SETTINGS_UPDATE]['input']) =>
+    invoke(IPC.SETTINGS_UPDATE, settings),
+
+  resetSettings: () =>
+    invoke(IPC.SETTINGS_RESET),
+
   // App
   selectFiles: () =>
     invoke(IPC.APP_SELECT_FILES),

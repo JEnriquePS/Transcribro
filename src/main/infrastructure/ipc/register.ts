@@ -2,6 +2,7 @@ import { config } from '../../config'
 import { registerJobHandlers } from './handlers/job-handlers'
 import { registerFolderHandlers } from './handlers/folder-handlers'
 import { registerModelHandlers } from './handlers/model-handlers'
+import { registerSettingsHandlers } from './handlers/settings-handlers'
 import { registerAppHandlers } from './handlers/app-handlers'
 import type { CompositionRoot } from '../composition-root'
 
@@ -13,5 +14,6 @@ export function registerAllHandlers(root: CompositionRoot, mediaPort: number): v
   registerJobHandlers(root.repo, root.createJobUc, root.retryJobUc, root.queue)
   registerFolderHandlers(root.folderRepo, root.repo)
   registerModelHandlers(config.modelsDir, config)
+  registerSettingsHandlers(config)
   registerAppHandlers(config.ffmpegPath, config.whisperCliPath, mediaPort)
 }
