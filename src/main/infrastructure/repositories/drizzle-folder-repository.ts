@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { asc, eq, sql } from 'drizzle-orm'
+import { asc, eq } from 'drizzle-orm'
 import { folders } from '../db/schema'
 import type { Db } from '../db/client'
 import type { Folder } from '../../../shared/types'
@@ -56,22 +56,5 @@ export class DrizzleFolderRepository {
     // ON DELETE CASCADE removes subfolders recursively.
     // ON DELETE SET NULL on jobs.folder_id handles orphaning jobs automatically.
     this.db.delete(folders).where(eq(folders.id, folderId)).run()
-  }
-
-  /**
-   * Returns the given folderId plus all its descendant folder IDs (recursive).
-   * Uses a SQLite recursive CTE. Result always contains at least the given folderId.
-   */
-  getAllDescendantIds(folderId: string): string[] {
-    const rows = this.db.all(sql`
-      WITH RECURSIVE descendants AS (
-        SELECT id FROM folders WHERE id = ${folderId}
-        UNION ALL
-        SELECT f.id FROM folders f
-        INNER JOIN descendants d ON f.parent_id = d.id
-      )
-      SELECT id FROM descendants
-    `) as Array<{ id: string }>
-    return rows.map((r) => r.id)
   }
 }

@@ -10,6 +10,7 @@ import type { WhisperTranscriber } from '../../infrastructure/services/whisper-t
 import type { WhisperFormatter } from '../../infrastructure/services/whisper-formatter'
 
 export type SendEventFn = (channel: string, payload: unknown) => void
+export type NotifyFn = (title: string, body: string) => void
 
 function nowIso(): string {
   return new Date().toISOString()
@@ -49,8 +50,10 @@ export class ProcessJobUseCase {
     private readonly extractor: FFmpegAudioExtractor,
     private readonly transcriber: WhisperTranscriber,
     private readonly formatter: WhisperFormatter,
-    private readonly defaultThreads: number,
+    /** Resolved per job so settings changes apply without restarting the app. */
+    private readonly getDefaultThreads: () => number,
     private readonly sendEvent: SendEventFn,
+    private readonly notify: NotifyFn,
   ) {}
 
   private makeStageCallback(
@@ -95,10 +98,8 @@ export class ProcessJobUseCase {
 
       this.repo.update(jobId, { startedAt: nowIso() })
 
-      // Find input file (named `input.<ext>`)
-      const inputFile = fs.readdirSync(jobDir).find((f) => path.parse(f).name === 'input')
-      if (!inputFile) throw new Error('No input file found in job directory')
-      const inputPath = path.join(jobDir, inputFile)
+      const inputPath = this.repo.getInputFile(jobId)
+      if (!inputPath) throw new Error('No input file found in job directory')
       const audioPath = path.join(jobDir, 'audio.wav')
 
       // Determine if this is a resume (extraction already done, has offset)
@@ -145,7 +146,7 @@ export class ProcessJobUseCase {
       })
       this.sendEvent(IPC.JOB_PROGRESS, buildProgressEvent(jobId, transcribingState))
 
-      const threads = config.threads ?? this.defaultThreads
+      const threads = config.threads ?? this.getDefaultThreads()
       const { callback: segmentCallback } = this.makeSegmentCallback(jobId)
 
       let result: TranscriptResult = await this.transcriber.transcribe({
@@ -196,6 +197,7 @@ export class ProcessJobUseCase {
       })
 
       this.sendEvent(IPC.JOB_COMPLETED, { jobId, metadata: final })
+      this.notify('Transcripción completada', metadata.originalFilename)
       return final
     } catch (exc) {
       console.error(`[process-job] Job ${jobId} failed:`, exc)
@@ -232,6 +234,7 @@ export class ProcessJobUseCase {
       })
 
       this.sendEvent(IPC.JOB_FAILED, { jobId, error: safeError })
+      this.notify('Transcripción fallida', current?.originalFilename ?? safeError)
       return failed
     }
   }

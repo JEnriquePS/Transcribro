@@ -1,11 +1,16 @@
 import { app } from 'electron'
 import path from 'node:path'
 import Store from 'electron-store'
+import { DEFAULT_MODEL, DEFAULT_LANGUAGE, WHISPER_DEFAULTS } from '../shared/constants'
 
 type StoreSchema = {
   defaultModel: string
   defaultLanguage: string
   whisperThreads: number
+  noSpeechThold: number
+  entropyThold: number
+  logprobThold: number
+  maxContext: number
 }
 
 const store = new Store<StoreSchema>()
@@ -23,11 +28,14 @@ function getResourcePath(relativePath: string): string {
   return path.join(__dirname, '../resources', relativePath)
 }
 
+// Windows executables carry the .exe extension; spawn() needs the exact filename.
+const EXE = process.platform === 'win32' ? '.exe' : ''
+
 export const config = {
   // ── Binary paths (platform-specific) ────────────────────────────────────────
-  whisperCliPath: getResourcePath('bin/whisper-cli'),
-  ffmpegPath:     getResourcePath('bin/ffmpeg'),
-  ffprobePath:    getResourcePath('bin/ffprobe'),
+  whisperCliPath: getResourcePath(`bin/whisper-cli${EXE}`),
+  ffmpegPath:     getResourcePath(`bin/ffmpeg${EXE}`),
+  ffprobePath:    getResourcePath(`bin/ffprobe${EXE}`),
 
   // ── User-data paths ──────────────────────────────────────────────────────────
   modelsDir:   path.join(app.getPath('userData'), 'models'),
@@ -35,20 +43,27 @@ export const config = {
   jobFilesDir: path.join(app.getPath('userData'), 'jobs'),
 
   // ── Persisted settings (via electron-store) ──────────────────────────────────
-  get defaultModel(): string  { return store.get('defaultModel', 'large-v3') },
+  get defaultModel(): string  { return store.get('defaultModel', DEFAULT_MODEL) },
   set defaultModel(v: string) { store.set('defaultModel', v) },
 
-  get defaultLanguage(): string  { return store.get('defaultLanguage', 'es') },
+  get defaultLanguage(): string  { return store.get('defaultLanguage', DEFAULT_LANGUAGE) },
   set defaultLanguage(v: string) { store.set('defaultLanguage', v) },
 
-  get whisperThreads(): number  { return store.get('whisperThreads', 8) },
+  get whisperThreads(): number  { return store.get('whisperThreads', WHISPER_DEFAULTS.threads) },
   set whisperThreads(v: number) { store.set('whisperThreads', v) },
 
-  // ── Whisper hard-coded tuning ─────────────────────────────────────────────────
+  // ── Whisper tuning (persisted; defaults in shared/constants.ts) ─────────────
   whisper: {
-    noSpeechThold: 0.6,
-    entropyThold:  2.4,
-    logprobThold:  -1.0,
-    maxContext:    0,
+    get noSpeechThold(): number  { return store.get('noSpeechThold', WHISPER_DEFAULTS.noSpeechThold) },
+    set noSpeechThold(v: number) { store.set('noSpeechThold', v) },
+
+    get entropyThold(): number  { return store.get('entropyThold', WHISPER_DEFAULTS.entropyThold) },
+    set entropyThold(v: number) { store.set('entropyThold', v) },
+
+    get logprobThold(): number  { return store.get('logprobThold', WHISPER_DEFAULTS.logprobThold) },
+    set logprobThold(v: number) { store.set('logprobThold', v) },
+
+    get maxContext(): number  { return store.get('maxContext', WHISPER_DEFAULTS.maxContext) },
+    set maxContext(v: number) { store.set('maxContext', v) },
   },
 } as const

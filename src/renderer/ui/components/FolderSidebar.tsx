@@ -7,6 +7,8 @@ import {
   FolderPlus,
   Inbox,
   Pencil,
+  PanelLeft,
+  PanelLeftClose,
   Trash2,
   Check,
   X,
@@ -19,6 +21,8 @@ import type { Folder as FolderType } from '../../../shared/types'
 interface FolderNode extends FolderType {
   children: FolderNode[]
 }
+
+const COLLAPSED_STORAGE_KEY = 'folderSidebarCollapsed'
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -319,6 +323,21 @@ export function FolderSidebar({
   // undefined = not creating, null = creating at root, string = creating under folder with that id
   const [creatingUnder, setCreatingUnder] = useState<string | null | undefined>(undefined)
   const [folderToDelete, setFolderToDelete] = useState<FolderNode | null>(null)
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(COLLAPSED_STORAGE_KEY) === 'true'
+    } catch {
+      return false
+    }
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(COLLAPSED_STORAGE_KEY, String(isCollapsed))
+    } catch {
+      // localStorage unavailable — collapse state simply won't persist across reloads
+    }
+  }, [isCollapsed])
 
   const tree = buildTree(folders)
 
@@ -389,11 +408,40 @@ export function FolderSidebar({
     })
   }
 
+  if (isCollapsed) {
+    return (
+      <aside aria-label="Carpetas" className="shrink-0 flex flex-col items-center pt-0.5">
+        <button
+          type="button"
+          onClick={() => setIsCollapsed(false)}
+          aria-label="Expandir panel de carpetas"
+          aria-expanded={false}
+          className="rounded p-1.5 text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          <PanelLeft size={16} aria-hidden="true" />
+        </button>
+      </aside>
+    )
+  }
+
   return (
     <aside
       aria-label="Carpetas"
       className="w-44 shrink-0 flex flex-col gap-1 border-r border-border-default pr-3"
     >
+      {/* Collapse toggle */}
+      <div className="flex items-center justify-end pb-1">
+        <button
+          type="button"
+          onClick={() => setIsCollapsed(true)}
+          aria-label="Colapsar panel de carpetas"
+          aria-expanded={true}
+          className="rounded p-1 text-text-secondary hover:text-text-primary hover:bg-surface-elevated transition-colors cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        >
+          <PanelLeftClose size={14} aria-hidden="true" />
+        </button>
+      </div>
+
       {/* Static entries */}
       <button
         type="button"

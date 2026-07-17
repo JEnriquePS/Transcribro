@@ -12,20 +12,19 @@ import {
   retryJobInputSchema,
   downloadInputSchema,
   moveJobToFolderInputSchema,
+  deleteJobMediaInputSchema,
   jobIdSchema,
 } from '../../../../shared/schemas'
 import { JobStatus } from '../../../../shared/types'
 import { JobNotFoundError } from '../../../domain/errors'
 import { handleIpc } from '../ipc-wrapper'
 import type { DrizzleJobRepository } from '../../repositories/drizzle-job-repository'
-import type { DrizzleFolderRepository } from '../../repositories/drizzle-folder-repository'
 import type { CreateJobUseCase } from '../../../application/use-cases/create-job'
 import type { RetryJobUseCase } from '../../../application/use-cases/retry-job'
 import type { JobQueue } from '../../../application/job-queue'
 
 export function registerJobHandlers(
   repo: DrizzleJobRepository,
-  folderRepo: DrizzleFolderRepository,
   createJobUc: CreateJobUseCase,
   retryJobUc: RetryJobUseCase,
   queue: JobQueue,
@@ -46,15 +45,14 @@ export function registerJobHandlers(
     })
   })
 
-  // List jobs with optional folder filter (recursive: includes descendants)
+  // List jobs with optional folder filter (exact folder only — subfolders are browsed separately)
   handleIpc(IPC.JOBS_LIST, listJobsInputSchema, (input) => {
     if (input.folderId === '__uncategorized__') {
-      return repo.list(input.limit, input.offset, null)
+      return repo.list(input.limit, input.offset, null, input.search)
     } else if (input.folderId) {
-      const ids = folderRepo.getAllDescendantIds(input.folderId)
-      return repo.list(input.limit, input.offset, ids)
+      return repo.list(input.limit, input.offset, [input.folderId], input.search)
     }
-    return repo.list(input.limit, input.offset, undefined)
+    return repo.list(input.limit, input.offset, undefined, input.search)
   })
 
   // Move job to a folder (or remove from folder when folderId is null)
@@ -123,5 +121,21 @@ export function registerJobHandlers(
     }
     const content = fs.readFileSync(filePath, 'utf-8')
     return { content }
+  })
+
+  // Delete the original media (input.<ext>) or the extracted audio (audio.wav)
+  // independently, to reclaim disk space. Transcript files and the DB row are
+  // kept. Only allowed once COMPLETED — earlier stages and retry still need these files.
+  handleIpc(IPC.JOBS_DELETE_MEDIA, deleteJobMediaInputSchema, (input) => {
+    const existing = repo.get(input.jobId)
+    if (!existing) throw new JobNotFoundError(input.jobId)
+    if (existing.status !== JobStatus.COMPLETED) {
+      throw new Error('Media can only be deleted once the job is completed')
+    }
+    if (input.kind === 'original') {
+      repo.deleteInputFile(input.jobId)
+    } else {
+      repo.deleteExtractedAudioFile(input.jobId)
+    }
   })
 }

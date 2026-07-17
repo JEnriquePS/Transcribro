@@ -19,6 +19,7 @@ import type {
   DeleteFolderInput,
   MoveJobToFolderInput,
   ListJobsInput,
+  WhisperSettings,
 } from './schemas'
 import type {
   JobMetadata,
@@ -43,6 +44,7 @@ export const IPC = {
   JOBS_RETRY:              'jobs:retry',
   JOBS_DOWNLOAD:           'jobs:download',
   JOBS_PARTIAL_TRANSCRIPT: 'jobs:partialTranscript',
+  JOBS_DELETE_MEDIA:       'jobs:deleteMedia',
 
   // ── Models (invoke: renderer → main) ──
   MODELS_LIST:             'models:list',
@@ -52,11 +54,17 @@ export const IPC = {
   MODELS_DELETE:           'models:delete',
   MODELS_STATUS:           'models:status',
 
+  // ── Settings (invoke: renderer → main) ──
+  SETTINGS_GET:            'settings:get',
+  SETTINGS_UPDATE:         'settings:update',
+  SETTINGS_RESET:          'settings:reset',
+
   // ── App (invoke: renderer → main) ──
   APP_HEALTH:              'app:health',
   APP_SELECT_FILES:        'app:selectFiles',
   APP_REVEAL_FILE:         'app:revealFile',
   APP_SAVE_FILE:           'app:saveFile',
+  APP_GET_MEDIA_PORT:      'app:getMediaPort',
 
   // ── Jobs (extra helpers) ──
   JOBS_GET_FILE_CONTENT:   'jobs:getFileContent',
@@ -118,6 +126,10 @@ export interface IpcMap {
     input: { jobId: string }
     output: { segments: { start: number; end: number; text: string }[]; text: string }
   }
+  [IPC.JOBS_DELETE_MEDIA]: {
+    input: { jobId: string; kind: 'original' | 'extracted' }
+    output: void
+  }
   [IPC.MODELS_LIST]: {
     input: void
     output: { models: ModelInfo[]; default: string }
@@ -142,6 +154,18 @@ export interface IpcMap {
     input: { name: string }
     output: { status: string; sizeMb?: number; progressMb?: number }
   }
+  [IPC.SETTINGS_GET]: {
+    input: void
+    output: WhisperSettings
+  }
+  [IPC.SETTINGS_UPDATE]: {
+    input: WhisperSettings
+    output: WhisperSettings
+  }
+  [IPC.SETTINGS_RESET]: {
+    input: void
+    output: WhisperSettings
+  }
   [IPC.APP_HEALTH]: {
     input: void
     output: { status: string; whisperAvailable: boolean; ffmpegAvailable: boolean }
@@ -158,13 +182,19 @@ export interface IpcMap {
     input: { sourcePath: string; defaultName: string }
     output: { saved: boolean }
   }
+  [IPC.APP_GET_MEDIA_PORT]: {
+    input: void
+    // Port of the loopback HTTP server serving job media for <video>/<audio> playback
+    output: { port: number }
+  }
   [IPC.JOBS_GET_FILE_CONTENT]: {
     input: { jobId: string; format: string }
     output: { content: string }
   }
   [IPC.FOLDERS_LIST]: {
     input: void
-    output: { folders: Folder[] }
+    // jobCounts: direct (non-recursive) job count per folder id — used to badge folder tiles
+    output: { folders: Folder[]; jobCounts: Record<string, number> }
   }
   [IPC.FOLDERS_CREATE]: {
     input: CreateFolderInput

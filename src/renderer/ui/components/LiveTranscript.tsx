@@ -36,6 +36,7 @@ export function LiveTranscript({ jobId, isActive }: LiveTranscriptProps) {
   }, [jobId])
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial fetch on mount/jobId change
     fetchTranscript()
     if (!isActive) return
     const interval = setInterval(fetchTranscript, POLL_INTERVAL)

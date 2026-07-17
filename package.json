@@ -10,6 +10,8 @@
     "build": "tsc -b && vite build",
     "bundle": "bash scripts/bundle-binaries.sh",
     "dist:mac": "npm run bundle && npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win",
+    "dist:linux": "npm run build && electron-builder --linux",
     "typecheck": "tsc -p src/shared/tsconfig.json && tsc -p src/main/tsconfig.json --noEmit && tsc -p src/renderer/tsconfig.json --noEmit && tsc -p src/preload/tsconfig.json --noEmit",
     "test": "vitest run",
     "pretest": "npm rebuild better-sqlite3",

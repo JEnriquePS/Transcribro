@@ -8,6 +8,9 @@ export const ALLOWED_EXTENSIONS = new Set([
   '.mp3', '.wav', '.flac', '.ogg', '.m4a',
 ])
 
+/** Audio-only extensions — used to pick an <audio> vs <video> player element. */
+export const AUDIO_EXTENSIONS = new Set(['.mp3', '.wav', '.flac', '.ogg', '.m4a'])
+
 export const KNOWN_MODELS = [
   { name: 'large-v3', sizeMb: 3094 },
   { name: 'medium',   sizeMb: 1533 },
@@ -29,6 +32,16 @@ export const WHISPER_DEFAULTS = {
   logprobThold: -1.0,
   /** 0 = disable context window (prevents hallucination cascades). */
   maxContext: 0,
+} as const
+
+/** Valid ranges for user-configurable whisper parameters (Zod validation + Settings UI). */
+export const WHISPER_LIMITS = {
+  threads:       { min: 1,   max: 32 },
+  noSpeechThold: { min: 0,   max: 1 },
+  entropyThold:  { min: 0,   max: 10 },
+  logprobThold:  { min: -20, max: 0 },
+  /** -1 = model maximum (224 tokens); 0 = disabled. */
+  maxContext:    { min: -1,  max: 224 },
 } as const
 
 export const MAX_FILE_SIZE = 2 * 1024 * 1024 * 1024 // 2 GB

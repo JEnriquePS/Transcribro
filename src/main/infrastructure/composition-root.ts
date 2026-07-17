@@ -1,3 +1,4 @@
+import { Notification } from 'electron'
 import type { BrowserWindow } from 'electron'
 import { getDb } from './db/client'
 import { config } from '../config'
@@ -27,6 +28,12 @@ export function createCompositionRoot() {
     }
   }
 
+  function notify(title: string, body: string): void {
+    if (Notification.isSupported()) {
+      new Notification({ title, body }).show()
+    }
+  }
+
   // ── Infrastructure ──────────────────────────────────────────────────────────
 
   const repo = new DrizzleJobRepository(getDb(), config.jobFilesDir)
@@ -34,13 +41,16 @@ export function createCompositionRoot() {
 
   const extractor = new FFmpegAudioExtractor(config.ffmpegPath, config.ffprobePath)
 
+  // Tuning is read lazily so Settings changes apply to the next job without restart
   const transcriber = new WhisperTranscriber(
     config.whisperCliPath,
     config.modelsDir,
-    config.whisper.noSpeechThold,
-    config.whisper.entropyThold,
-    config.whisper.logprobThold,
-    config.whisper.maxContext,
+    () => ({
+      noSpeechThold: config.whisper.noSpeechThold,
+      entropyThold:  config.whisper.entropyThold,
+      logprobThold:  config.whisper.logprobThold,
+      maxContext:    config.whisper.maxContext,
+    }),
   )
 
   const formatter = new WhisperFormatter()
@@ -54,8 +64,9 @@ export function createCompositionRoot() {
     extractor,
     transcriber,
     formatter,
-    config.whisperThreads,
+    () => config.whisperThreads,
     sendEvent,
+    notify,
   )
 
   const retryJobUc = new RetryJobUseCase(repo)

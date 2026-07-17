@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import { eq, desc, count, isNull, inArray } from 'drizzle-orm'
+import { eq, desc, count, isNull, isNotNull, inArray, like, or, and } from 'drizzle-orm'
 import { jobs, transcriptSegments, transcriptResults } from '../db/schema'
 import type { Db } from '../db/client'
 import type { JobMetadata, TranscriptSegment, TranscriptResult } from '../../../shared/types'
@@ -118,19 +118,45 @@ export class DrizzleJobRepository {
   }
 
   /**
-   * List jobs with optional folder filter.
+   * List jobs with optional folder filter and full-text search.
    * - folderFilter === undefined     → all jobs (no WHERE clause)
    * - folderFilter === null          → uncategorized (WHERE folder_id IS NULL)
    * - folderFilter === string[]      → jobs in any of those folder IDs (WHERE folder_id IN (...))
    *                                    Pass [folderId, ...descendants] for recursive folder selection.
+   * - search                        → matches display name / original filename, OR the full
+   *                                    transcript text of completed jobs (transcript_results.full_text)
    */
-  list(limit = 50, offset = 0, folderFilter?: null | readonly string[]): { jobs: JobMetadata[]; total: number } {
-    const whereClause =
-      folderFilter === undefined
-        ? undefined
-        : folderFilter === null
-          ? isNull(jobs.folderId)
-          : inArray(jobs.folderId, folderFilter as string[])
+  list(
+    limit = 50,
+    offset = 0,
+    folderFilter?: null | readonly string[],
+    search?: string,
+  ): { jobs: JobMetadata[]; total: number } {
+    const conditions = []
+
+    if (folderFilter !== undefined) {
+      conditions.push(
+        folderFilter === null ? isNull(jobs.folderId) : inArray(jobs.folderId, folderFilter as string[]),
+      )
+    }
+
+    if (search && search.trim() !== '') {
+      const pattern = `%${search.trim()}%`
+      const matchingResultIds = this.db
+        .select({ jobId: transcriptResults.jobId })
+        .from(transcriptResults)
+        .where(like(transcriptResults.fullText, pattern))
+
+      conditions.push(
+        or(
+          like(jobs.displayName, pattern),
+          like(jobs.originalFilename, pattern),
+          inArray(jobs.id, matchingResultIds),
+        ),
+      )
+    }
+
+    const whereClause = conditions.length > 0 ? and(...conditions) : undefined
 
     const baseQuery = this.db.select().from(jobs)
     const countQuery = this.db.select({ value: count() }).from(jobs)
@@ -144,6 +170,18 @@ export class DrizzleJobRepository {
     const [{ value: total }] = (whereClause ? countQuery.where(whereClause) : countQuery).all()
 
     return { jobs: rows.map(rowToMetadata), total }
+  }
+
+  /** Direct (non-recursive) job count per folder — used to badge folder tiles in the UI. */
+  countByFolder(): Record<string, number> {
+    const rows = this.db
+      .select({ folderId: jobs.folderId, value: count() })
+      .from(jobs)
+      .where(isNotNull(jobs.folderId))
+      .groupBy(jobs.folderId)
+      .all()
+
+    return Object.fromEntries(rows.map((r) => [r.folderId as string, r.value]))
   }
 
   moveToFolder(jobId: string, folderId: string | null): JobMetadata {
@@ -189,6 +227,36 @@ export class DrizzleJobRepository {
     const dest = path.join(this.jobDir(jobId), `input${ext}`)
     fs.copyFileSync(sourcePath, dest)
     return dest
+  }
+
+  /** Resolve the copied original media file (`input.<ext>`) for a job, or null if missing. */
+  getInputFile(jobId: string): string | null {
+    const dir = this.jobDir(jobId)
+    if (!fs.existsSync(dir)) return null
+    const found = fs.readdirSync(dir).find((f) => path.parse(f).name === 'input')
+    return found ? path.join(dir, found) : null
+  }
+
+  /** Resolve the extracted 16kHz mono audio (`audio.wav`) for a job, or null if missing. */
+  getExtractedAudioFile(jobId: string): string | null {
+    const file = path.join(this.jobDir(jobId), 'audio.wav')
+    return fs.existsSync(file) ? file : null
+  }
+
+  /**
+   * Delete the original media file (`input.<ext>`) to reclaim disk space.
+   * Transcript files and the DB row are left untouched. Only safe once the
+   * job is COMPLETED — earlier stages (and retry) still need this file.
+   */
+  deleteInputFile(jobId: string): void {
+    const input = this.getInputFile(jobId)
+    if (input) fs.rmSync(input, { force: true })
+  }
+
+  /** Delete the extracted 16kHz mono audio (`audio.wav`) to reclaim disk space. */
+  deleteExtractedAudioFile(jobId: string): void {
+    const audio = this.getExtractedAudioFile(jobId)
+    if (audio) fs.rmSync(audio, { force: true })
   }
 
   getOutputFile(jobId: string, fmt: string): string | null {
